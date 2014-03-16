@@ -64,6 +64,24 @@ static int op_move_result_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
  *
  * 0C00 - move-result-object v0
  */
+
+static int op_move(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
+    if (is_verbose())
+        printf("move v%d,v%d\n", reg_idx_vx, reg_idx_vy);
+    simple_dvm_register *rx = &vm->regs[reg_idx_vx];
+    simple_dvm_register *ry = &vm->regs[reg_idx_vy];
+    rx->data[0] = ry->data[0]; 
+    rx->data[1] = ry->data[1]; 
+    rx->data[2] = ry->data[2]; 
+    rx->data[3] = ry->data[3]; 
+
+    *pc = *pc + 2;
+    return 0;
+}
+
 static int op_move_result_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int reg_idx_vx = 0;
@@ -670,7 +688,127 @@ static int op_div_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     return 0;
 }
 
+static int op_goto(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+    char offset = (char) ptr[*pc + 1];
+    if(is_verbose())
+        printf("goto %#x\n",(int)offset);
+    *pc = *pc + offset * 2;
+    return 0;
+}
+
+static int op_if_ge(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+    int reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
+    int offset = (int) ptr[*pc + 2] + (int) ptr[*pc + 3] * (int) 256;
+    int x,y;
+    load_reg_to(vm, reg_idx_vy, (unsigned char*) &y);
+    load_reg_to(vm, reg_idx_vx, (unsigned char*) &x);
+    if(is_verbose()){
+        printf("if-ge v[%d]:%d, v[%d]:%d, off:%#x\n",reg_idx_vy,y,reg_idx_vx,x,offset);
+    }
+    if(x >= y)
+        *pc = *pc + offset * 2;
+    else
+        *pc = *pc + 4;
+    return 0;
+}
+
+static int op_long_to_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+    int reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
+    int reg_idx_vz = reg_idx_vy + 1;
+    long value = 0;
+    unsigned char *ptr_value = (unsigned char*) &value;
+    load_reg_to_long(vm, reg_idx_vy, ptr_value + 4);
+    load_reg_to_long(vm, reg_idx_vz, ptr_value);
+    int value_to = (int)value;
+    store_to_reg(vm, reg_idx_vx, (unsigned char*)&value_to);
+    if(is_verbose()){
+        printf("long to int v%d v%d, %ld -> %d",reg_idx_vx,reg_idx_vy,value,value_to);
+    }
+    *pc = *pc + 2;
+    return 0;
+}
+
+static int op_sub_long_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+    int reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
+    int reg_idx_vz = reg_idx_vy + 1;
+    long value1 = 0L, value2 = 0L;
+    unsigned char *ptr_value1 = (unsigned char*) &value1;
+    unsigned char *ptr_value2 = (unsigned char*) &value2;
+    load_reg_to_long(vm, reg_idx_vx, ptr_value1 + 4);
+    load_reg_to_long(vm, reg_idx_vx+1, ptr_value1);
+    load_reg_to_long(vm, reg_idx_vy, ptr_value2 + 4);
+    load_reg_to_long(vm, reg_idx_vy+1, ptr_value2);
+    value1 = value1 - value2;
+    store_long_to_reg(vm, reg_idx_vx, ptr_value1+4);
+    store_long_to_reg(vm, reg_idx_vx+1, ptr_value1);
+    if(is_verbose()){
+        printf("long to int v%d v%d, %ld - %ld",reg_idx_vx,reg_idx_vy,value1,value2);
+    }
+    *pc = *pc + 2;
+    return 0;
+}
+
+static int op_sub_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int reg_idx_vz = 0;
+    long x = 0, y = 0 , z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    reg_idx_vz = ptr[*pc + 3];
+    unsigned char *ptr_x = (unsigned char *) &x;
+    unsigned char *ptr_y = (unsigned char *) &y;
+    unsigned char *ptr_z = (unsigned char *) &z;
+
+    if (is_verbose())
+        printf("sub-long v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+    /* x = y - z */
+    load_reg_to_long(vm, reg_idx_vy, ptr_y+4);
+    load_reg_to_long(vm, reg_idx_vy+1, ptr_y);
+    load_reg_to_long(vm, reg_idx_vz, ptr_z+4);
+    load_reg_to_long(vm, reg_idx_vz+1, ptr_z);
+    x = y - z;
+    store_long_to_reg(vm, reg_idx_vx, ptr_x+4);
+    store_long_to_reg(vm, reg_idx_vx+1, ptr_x);
+    *pc = *pc + 4;
+    return 0;
+
+}
+
+static int op_add_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("add-int v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    /* x = y + z */
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = y + z;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
+
 static byteCode byteCodes[] = {
+    { "move"              , 0x01, 2,  op_move },
+    { "goto"              , 0x28, 2,  op_goto },
+    { "if-ge"             , 0x35, 4,  op_if_ge },
+    { "long-to-int"       , 0x84, 2,  op_long_to_int},
+    { "sub-long/2addr"    , 0xbc, 2,  op_sub_long_2addr },
+    { "sub-long"          , 0x9c, 4,  op_sub_long },
+    { "add-int/lit8"      , 0xd8, 4,  op_add_int_lit8 },
     { "move-result-wide"  , 0x0B, 2,  op_move_result_wide },
     { "move-result-object", 0x0C, 2,  op_move_result_object },
     { "return-void"       , 0x0e, 2,  op_return_void },
