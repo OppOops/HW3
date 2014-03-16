@@ -736,6 +736,34 @@ static int convertToCodeAttribute(CodeAttribute *ca, AttributeInfo *attr)
     memcpy(ca->code, attr->info + info_p, ca->code_length);
 }
 
+static void printCodeAttribute(CodeAttribute *ca, SimpleConstantPool *p)
+{
+    int i = 0;
+    int tmp = 0;
+    char name[255];
+    unsigned char opCode = 0;
+    getUTF8String(p, ca->attribute_name_index, 255, name);
+    printf("attribute name : %s\n", name);
+    printf("attribute length: %d\n", ca->attribute_length);
+
+    printf("max_stack: %d\n", ca->max_stack);
+    printf("max_locals: %d\n", ca->max_locals);
+    printf("code_length: %d\n", ca->code_length);
+    unsigned char *pc = ca->code;
+    i = 0;
+    do {
+        char *opName = findOpCode(pc[0]);
+        if (opName == 0) {
+            printf("Unknow OpCode %02X\n", pc[0]);
+            exit(1);
+        }
+        printf("%s \n", opName);
+        tmp = findOpCodeOffset(pc[0]);
+        pc += tmp;
+        i += tmp;
+    } while (i < ca->code_length);
+}
+
 int executeMethod(MethodInfo *startup, StackFrame *stack, SimpleConstantPool *p)
 {
     int i = 0;
@@ -770,30 +798,3 @@ int executeMethod(MethodInfo *startup, StackFrame *stack, SimpleConstantPool *p)
     return 0;
 }
 
-static void printCodeAttribute(CodeAttribute *ca, SimpleConstantPool *p)
-{
-    int i = 0;
-    int tmp = 0;
-    char name[255];
-    unsigned char opCode = 0;
-    getUTF8String(p, ca->attribute_name_index, 255, name);
-    printf("attribute name : %s\n", name);
-    printf("attribute length: %d\n", ca->attribute_length);
-
-    printf("max_stack: %d\n", ca->max_stack);
-    printf("max_locals: %d\n", ca->max_locals);
-    printf("code_length: %d\n", ca->code_length);
-    unsigned char *pc = ca->code;
-    i = 0;
-    do {
-        char *opName = findOpCode(pc[0]);
-        if (opName == 0) {
-            printf("Unknow OpCode %02X\n", pc[0]);
-            exit(1);
-        }
-        printf("%s \n", opName);
-        tmp = findOpCodeOffset(pc[0]);
-        pc += tmp;
-        i += tmp;
-    } while (i < ca->code_length);
-}

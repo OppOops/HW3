@@ -9,7 +9,7 @@ EXECUTABLE = $(PROJECT)$(SUFFIX)
 
 # Basic configurations
 CFLAGS += -g -std=c99
-LDFLAGS =
+LDFLAGS = -DSIMPLE_JVM_DEBUG
 
 # Optimizations
 CFLAGS += -Os

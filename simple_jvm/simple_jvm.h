@@ -339,5 +339,8 @@ typedef struct _byteCode {
     opCodeFunc func; 
 } byteCode;
 int executeMethod(MethodInfo *startup, StackFrame *stack, SimpleConstantPool *p);
+#ifndef SIMPLE_JVM_DEBUG
+#define SIMPLE_JVM_DEBUG 1
+#endif
 
 #endif

@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "simple_jvm.h"
-
 /*
  * Simple JVM stores integer-only intrinsically,
  * and parses one class file called Foo.class in the same directory.
