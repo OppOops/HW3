@@ -117,6 +117,17 @@ static int op_dup(unsigned char **opCode, StackFrame *stack, SimpleConstantPool 
     return 0;
 }
 
+static int op_aconst_null(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    int value = 0;
+    pushRef(stack, value);
+#if SIMPLE_JVM_DEBUG
+    printf("aconst_null\n");
+#endif
+    *opCode = *opCode + 1;
+    return 0;
+}
+
 /* getstatic */
 static int op_getstatic(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
 {
@@ -130,6 +141,39 @@ static int op_getstatic(unsigned char **opCode, StackFrame *stack, SimpleConstan
 #endif
     pushRef(stack, field_index);
     *opCode = *opCode + 3;
+    return 0;
+}
+
+static int op_goto(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    //u2 field_index ;
+    unsigned short tmp[2];
+    tmp[0] = opCode[0][1];
+    tmp[1] = opCode[0][2];
+    short target = (tmp[0] << 8) + tmp[1];
+#if SIMPLE_JVM_DEBUG
+    printf("go to %#x (%#x,%#x)\n", (int)target, (int)tmp[0], (int)tmp[1]);
+#endif
+    *opCode = *opCode + target;
+    return 0;
+}
+
+static int op_if_icmpge(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    //u2 field_index ;
+    unsigned short tmp[2];
+    tmp[0] = opCode[0][1];
+    tmp[1] = opCode[0][2];
+    short target = (tmp[0] << 8) + tmp[1];
+    int value2 = popInt(stack);
+    int value1 = popInt(stack);
+#if SIMPLE_JVM_DEBUG
+    printf("if %d>=%d, go to %#x (%#x,%#x)\n",value1,value2, (int)target, (int)tmp[0], (int)tmp[1]);
+#endif
+    if(value1 >= value2)
+        *opCode = *opCode + target;
+    else
+        *opCode = *opCode + 3;
     return 0;
 }
 
@@ -289,6 +333,18 @@ static int op_iload_3(unsigned char **opCode, StackFrame *stack, SimpleConstantP
     return 0;
 }
 
+static int op_lload(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    int index = opCode[0][1];
+    int value = localVariables.long_int[index];
+#if SIMPLE_JVM_DEBUG
+    printf("iload: load value from local variable %d(%ld)\n", index, localVariables.long_int[index]);
+#endif
+    pushLong(stack, value);
+    *opCode = *opCode + 2;
+    return 0;
+}
+
 /* imul */
 static int op_imul(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
 {
@@ -334,6 +390,19 @@ static int op_dmul(unsigned char **opCode, StackFrame *stack, SimpleConstantPool
     return 0;
 }
 
+/*0x84 iinc*/
+static int op_iinc(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p){
+    int idx = opCode[0][1];
+    int constant = opCode[0][2];
+#if SIMPLE_JVM_DEBUG
+    printf("iinc: v[%d] + %d\n", idx, constant);
+#endif
+    localVariables.integer[idx] += constant;
+    *opCode = *opCode + 3;
+    return 0;
+}
+
+
 /* 0x8e d2i */
 static int op_d2i(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
 {
@@ -342,6 +411,18 @@ static int op_d2i(unsigned char **opCode, StackFrame *stack, SimpleConstantPool 
     result = (int)value1;
 #if SIMPLE_JVM_DEBUG
     printf("d2i: %d <-- %f\n", result, value1);
+#endif
+    pushInt(stack, result);
+    *opCode = *opCode + 1;
+    return 0;
+}
+
+static int op_l2i(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    long value1 = popLong(stack);
+    int result = (int)value1;
+#if SIMPLE_JVM_DEBUG
+    printf("d2i: %d <-- %ld\n", result, value1);
 #endif
     pushInt(stack, result);
     *opCode = *opCode + 1;
@@ -412,6 +493,18 @@ static int op_istore_3(unsigned char **opCode, StackFrame *stack, SimpleConstant
     return 0;
 }
 
+static int op_lstore(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    long value = popLong(stack);
+    int index = opCode[0][1];
+#if SIMPLE_JVM_DEBUG
+    printf("istore: store value into local variable %d(%ld)\n", index, value);
+#endif
+    localVariables.long_int[index] = value;
+    *opCode = *opCode + 2;
+    return 0;
+}
+
 /* isub */
 static int op_isub(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
 {
@@ -423,6 +516,19 @@ static int op_isub(unsigned char **opCode, StackFrame *stack, SimpleConstantPool
     printf("isub : %d - %d = %d\n", value1, value2, result);
 #endif
     pushInt(stack, result);
+    *opCode = *opCode + 1;
+    return 0;
+}
+
+static int op_lsub(unsigned char **opCode, StackFrame *stack, SimpleConstantPool *p)
+{
+    long value2 = popLong(stack);
+    long value1 = popLong(stack);
+    long result = value1 - value2;
+#if SIMPLE_JVM_DEBUG
+    printf("lsub : %ld - %ld = %ld\n", value1, value2, result);
+#endif
+    pushLong(stack, result);
     *opCode = *opCode + 1;
     return 0;
 }
@@ -650,10 +756,13 @@ static int op_return(unsigned char **opCode, StackFrame *stack, SimpleConstantPo
 }
 
 static byteCode byteCodes[] = {
+    { "op_aconst_null"  , 0x01, 1,  op_aconst_null      },
     { "aload_0"         , 0x2A, 1,  op_aload_0          },
     { "bipush"          , 0x10, 2,  op_bipush           },
     { "dup"             , 0x59, 1,  op_dup              },
     { "getstatic"       , 0xB2, 3,  op_getstatic        },
+    { "if_icmpge"       , 0xA2, 3,  op_if_icmpge        }, //added
+    { "goto"            , 0xA7, 3,  op_goto             }, //added
     { "iadd"            , 0x60, 1,  op_iadd             },
     { "iconst_0"        , 0x03, 1,  op_iconst_0         },
     { "iconst_1"        , 0x04, 1,  op_iconst_1         },
@@ -666,19 +775,24 @@ static byteCode byteCodes[] = {
     { "imul"            , 0x68, 1,  op_imul             },
     { "dadd"            , 0x63, 1,  op_dadd             },
     { "dmul"            , 0x6B, 1,  op_dmul             },
-    { "d2i"             , 0x8e, 1,  op_d2i              },
+    { "iinc"            , 0x84, 3,  op_iinc             },  //added
+    { "d2i"             , 0x8e, 1,  op_d2i              }, 
+    { "l2i"             , 0x88, 1,  op_l2i              },  //added
     { "invokespecial"   , 0xB7, 3,  op_invokespecial    },
     { "invokevirtual"   , 0xB6, 3,  op_invokevirtual    },
     { "invokestatic"    , 0xB8, 3,  op_invokestatic     },
     { "iload"           , 0x15, 2,  op_iload            },
+    { "lload"           , 0x16, 2,  op_lload            },  //added
     { "iload_1"         , 0x1B, 1,  op_iload_1          },
     { "iload_2"         , 0x1C, 1,  op_iload_2          },
     { "iload_3"         , 0x1D, 1,  op_iload_3          },
     { "istore"          , 0x36, 2,  op_istore           },
+    { "lstore"          , 0x37, 2,  op_lstore           },  //added
     { "istore_1"        , 0x3C, 1,  op_istore_1         },
     { "istore_2"        , 0x3D, 1,  op_istore_2         },
     { "istore_3"        , 0x3E, 1,  op_istore_3         },
     { "isub"            , 0x64, 1,  op_isub             },
+    { "lsub"            , 0x65, 1,  op_lsub             },
     { "ldc"             , 0x12, 2,  op_ldc              },
     { "ldc2_w"          , 0x14, 3,  op_ldc2_w           },
     { "new"             , 0xBB, 3,  op_new              },

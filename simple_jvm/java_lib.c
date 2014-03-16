@@ -21,8 +21,20 @@ int java_lang_math_random(StackFrame *stack, SimpleConstantPool *p, char *type)
     pushDouble(stack, r);
     return 0;
 }
+
+int java_lang_system_currenttimemillis(StackFrame *stack, SimpleConstantPool *p){
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    unsigned long mtime = (t.tv_sec%1000000L)*1000 + t.tv_usec / 1000;
+#if SIMPLE_JVM_DEBUG
+    printf("currentTime t = %lu\n", mtime);
+#endif
+    pushLong(stack,mtime); 
+}
+
 static java_lang_method method_table[] = {
-    {"java/lang/Math", "random", java_lang_math_random}
+    {"java/lang/Math", "random", java_lang_math_random},
+    {"java/lang/System", "currentTimeMillis", java_lang_system_currenttimemillis}
 };
 
 static int java_lang_method_size = sizeof(method_table) / sizeof(java_lang_method);

@@ -7,6 +7,8 @@
 #ifndef SIMPLE_JVM_H
 #define SIMPLE_JVM_H
 
+//#define SIMPLE_JVM_DEBUG 1
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -327,6 +329,7 @@ int     is_ref_entry(StackFrame *stack);
 /* local variable */
 typedef struct _LocalVariables {
     int integer[10];
+    long long_int[10];
 } LocalVariables;
 
 /* byte Codes */
@@ -339,8 +342,5 @@ typedef struct _byteCode {
     opCodeFunc func; 
 } byteCode;
 int executeMethod(MethodInfo *startup, StackFrame *stack, SimpleConstantPool *p);
-#ifndef SIMPLE_JVM_DEBUG
-#define SIMPLE_JVM_DEBUG 1
-#endif
 
 #endif
