@@ -14,7 +14,7 @@ static int find_const_string(DexFileFormat *dex, char *entry)
     for (i = 0; i < dex->header.stringIdsSize; i++) {
         if (memcmp(dex->string_data_item[i].data, entry, strlen(entry)) == 0) {
             if (is_verbose())
-                printf("find %s in dex->string_data_item[%d]\n", entry, i);
+                printf("find %s in dex->string_data_item[%d] %s\n", entry, i, (char*)dex->string_data_item[i].data);
             return i;
         }
     }
@@ -870,6 +870,7 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
     int method_name_idx = -1;
     int method_idx = -1;
     int class_idx = -1;
+    int class_def_idx = -1;
 
     method_name_idx = find_const_string(dex, entry);
 
@@ -881,8 +882,8 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
         if (dex->method_id_item[i].name_idx == method_name_idx) {
             if (is_verbose() > 2)
                 printf("find %s in class_idx[%d], method_id = %d\n",
-                       entry, i - 1, i);
-            class_idx = i - 1;
+                       entry, dex->method_id_item[i].class_idx, i);
+            class_idx = dex->method_id_item[i].class_idx;
             method_idx = i;
             break;
         }
@@ -891,8 +892,29 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
         return;
     }
 
+    for(i=0;i<dex->header.classDefsSize;i++){
+        if(class_idx == dex->class_def_item[i].class_idx){
+            class_def_idx = i;
+            if (is_verbose() > 2)
+		printf("find class_idx in class item %d\n",i);
+            break;
+        }
+    }
+    
+    int method_acc_idx = 0;
+    int end = dex->class_data_item[class_def_idx].direct_methods_size;
+    for(i=0;i<end;i++){
+        method_acc_idx += dex->class_data_item[class_def_idx].direct_methods[i].method_idx_diff;
+        if(method_acc_idx == method_idx){
+            if (is_verbose() > 2)
+            printf("find method %d in class item %d, direct_method %d\n",method_idx,class_def_idx,i);
+            method_idx = i;
+            break;
+        }
+    }
+
     encoded_method *m =
-        &dex->class_data_item[class_idx].direct_methods[method_idx];
+        &dex->class_data_item[class_def_idx].direct_methods[method_idx];
 
     if (is_verbose() > 2)
         printf("encoded_method method_id = %d, insns_size = %d\n",

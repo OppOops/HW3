@@ -9,7 +9,7 @@
 #include <string.h>
 #include "simple_dvm.h"
 
-static int verbose_flag = 0;
+static int verbose_flag = 4;
 
 int is_verbose()
 {

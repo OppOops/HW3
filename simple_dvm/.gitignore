@@ -1,0 +1,28 @@
+# compiling output
+*.dat
+*.la
+*.lo
+*.o
+.deps
+.libs
+*.a
+simple_jvm/jvm
+simple_dvm/dvm
+
+# tests
+output-jvm
+output-dvm
+
+# gcov output
+*.gcda
+*.gcno
+*.gcov
+/coverage.info
+/coveragereport
+
+# cscope output
+cscope.*
+
+# my config
+*.sh
+*.swp
