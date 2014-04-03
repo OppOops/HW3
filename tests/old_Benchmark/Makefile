@@ -2,8 +2,8 @@ JCC=javac
 TARGET=src/*.java
 BIN=bin
 
-all: src/dhry.java
+all: src/Benchmark.java
 	${JCC} ${TARGET} -d ${BIN}
-	cd bin && dx --dex --output=../dhry.dex *.class
+	cd bin && dx --dex --output=../Benchmark.dex *.class
 clean:
 	rm *.class 
