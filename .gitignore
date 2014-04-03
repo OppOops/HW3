@@ -22,3 +22,6 @@ output-dvm
 
 # cscope output
 cscope.*
+
+# my config
+*.sh
