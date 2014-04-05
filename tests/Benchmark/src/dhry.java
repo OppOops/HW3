@@ -1,12 +1,39 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+public class dhry {
 
-public class dhry extends GlobalVariables implements Runnable {
+    /* DhrystoneConstants.java stuff */
+    public static final int Ident_1     = 0;
+    public static final int Ident_2     = 1;
+    public static final int Ident_3     = 2;
+    public static final int Ident_4     = 3;
+    public static final int Ident_5     = 4;
 
+    /* GlobalVariables.java stuff */
+    static dhry               Record_Glob,
+                                Next_Record_Glob;
+    static int                  Int_Glob;
+    static boolean              Bool_Glob;
+    static char                 Char_Glob_1,
+                                Char_Glob_2;
+    static int[]                Array_Glob_1    = new int[128];
+    static int[][]              Array_Glob_2    = new int[128][128];
+    static dhry               First_Record    = new dhry(),
+                                Second_Record   = new dhry();
+    
+    /* Record_Type.java stuff */
+    dhry Record_Comp;
+    int Discr;
+    int Enum_Comp;
+    int Int_Comp;
+    String String_Comp;
+    int Enum_Comp_2;
+    String String_Comp_2;
+    char Char_Comp_1;
+    char Char_Comp_2;
+
+    /* dhry.java private fields */
     long Number_Of_Runs = 10000000;
-
-    ExitObserver exitObserver;
-
+    
+    /* dhry.java method */
     public void execute() {
 
         int         Int_Loc_1,
@@ -37,61 +64,62 @@ public class dhry extends GlobalVariables implements Runnable {
 
         String_Loc_1                = "DHRYSTONE PROGRAM, 1'ST STRING";
 
-	Msg.out.println("Execution starts, " + Number_Of_Runs
-			+ " runs through Dhrystone");
+        System.err.println("Execution starts, " + Number_Of_Runs
+                        + " runs through Dhrystone");
 
-	begin_time = System.currentTimeMillis();
+        begin_time = System.currentTimeMillis();
 
         for (Run_Index = 1; Run_Index <= Number_Of_Runs; ++Run_Index) {
 
-	    Proc_5();
-	    Proc_4();
+            Proc_5();
+            Proc_4();
 
-	    Int_Loc_1 = 2;
-	    Int_Loc_2 = 3;
+            Int_Loc_1 = 2;
+            Int_Loc_2 = 3;
 
-	    String_Loc_2 = "DHRYSTONE PROGRAM, 2'ND STRING";
+            String_Loc_2 = "DHRYSTONE PROGRAM, 2'ND STRING";
 
-	    Enum_Loc[0] = Ident_2;
-	    Bool_Glob = !Func_2(String_Loc_1, String_Loc_2);
+            Enum_Loc[0] = Ident_2;
+            Bool_Glob = !Func_2(String_Loc_1, String_Loc_2);
 
-	    while (Int_Loc_1 < Int_Loc_2) {
-		Int_Loc_3_Ref[0] = 5 * Int_Loc_1 - Int_Loc_2;
-		Proc_7(Int_Loc_1, Int_Loc_2, Int_Loc_3_Ref);
-		Int_Loc_1 += 1;
-	    }
+            while (Int_Loc_1 < Int_Loc_2) {
+                Int_Loc_3_Ref[0] = 5 * Int_Loc_1 - Int_Loc_2;
+                Proc_7(Int_Loc_1, Int_Loc_2, Int_Loc_3_Ref);
+                Int_Loc_1 += 1;
+            }
 
-	    Int_Loc_3 = Int_Loc_3_Ref[0];
-	    Proc_8(Array_Glob_1, Array_Glob_2, Int_Loc_1, Int_Loc_3);
-	    Proc_1(Record_Glob);
+            Int_Loc_3 = Int_Loc_3_Ref[0];
+            Proc_8(Array_Glob_1, Array_Glob_2, Int_Loc_1, Int_Loc_3);
+            Proc_1(Record_Glob);
 
-	    for (Char_Index = 'A'; Char_Index <= Char_Glob_2; ++Char_Index) {
-		if (Enum_Loc[0] == Func_1(Char_Index, 'C'))
-		    Proc_6(Ident_1, Enum_Loc);
-	    }
-	    
-	    Int_Loc_3 = Int_Loc_2 * Int_Loc_1;
-	    Int_Loc_2 = Int_Loc_3 / Int_Loc_1;
-	    Int_Loc_2 = 7 * (Int_Loc_3 - Int_Loc_2) - Int_Loc_1;
+            for (Char_Index = 'A'; Char_Index <= Char_Glob_2; ++Char_Index) {
+                if (Enum_Loc[0] == Func_1(Char_Index, 'C'))
+                    Proc_6(Ident_1, Enum_Loc);
+            }
+            
+            Int_Loc_3 = Int_Loc_2 * Int_Loc_1;
+            Int_Loc_2 = Int_Loc_3 / Int_Loc_1;
+            Int_Loc_2 = 7 * (Int_Loc_3 - Int_Loc_2) - Int_Loc_1;
 
-	    Int_Loc_1_Ref[0] = Int_Loc_1;
-	    Proc_2(Int_Loc_1_Ref);
-	    Int_Loc_1 = Int_Loc_1_Ref[0];
-	    
-	}
+            Int_Loc_1_Ref[0] = Int_Loc_1;
+            Proc_2(Int_Loc_1_Ref);
+            Int_Loc_1 = Int_Loc_1_Ref[0];
+            
+        }
 
-	end_time = System.currentTimeMillis();
-	total_time = end_time - begin_time;
+        end_time = System.currentTimeMillis();
+        total_time = end_time - begin_time;
 
-        Msg.out.println("total time: " + total_time + "ms");
-	Msg.out.println("Result: " + Number_Of_Runs * 1000 / total_time
-			+ " dhrystone/sec.");
+        System.err.println("total time: " + total_time + "ms");
+        System.err.println("Result: " + Number_Of_Runs * 1000 / total_time
+                        + " dhrystone/sec.");
 
     }
 
-    void Proc_1(Record_Type Pointer_Par_Val) {
+    /* dhry.java method */
+    void Proc_1(dhry Pointer_Par_Val) {
 
-        Record_Type Next_Record = Pointer_Par_Val.Record_Comp;
+        dhry Next_Record = Pointer_Par_Val.Record_Comp;
 
         Pointer_Par_Val.Record_Comp = Record_Glob;
 
@@ -117,6 +145,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_2(int Int_Par_Ref[]) {
 
         int Int_Loc;
@@ -135,7 +164,8 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
-    void Proc_3(Record_Type Pointer_Par_Ref) {
+    /* dhry.java method */
+    void Proc_3(dhry Pointer_Par_Ref) {
 
         if (Record_Glob != null)
             Pointer_Par_Ref = Record_Glob.Record_Comp;
@@ -149,6 +179,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_4() {
 
         boolean Bool_Loc;
@@ -159,6 +190,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_5() {
 
         Char_Glob_1 = 'A';
@@ -166,6 +198,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_6(int Enum_Par_Val, int Enum_Par_Ref[]) {
 
         Enum_Par_Ref[0] = Enum_Par_Val;
@@ -201,6 +234,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_7(int Int_Par_Val1, int Int_Par_Val2, int Int_Par_Ref[]) {
 
         int Int_Loc;
@@ -210,6 +244,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     void Proc_8(int[] Array_Par_1_Ref, int[][] Array_Par_2_Ref, int Int_Par_Val_1, int Int_Par_Val_2) {
 
         int Int_Index,
@@ -227,6 +262,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     int Func_1(char Char_Par_1_Val, char Char_Par_2_Val) {
 
         char Char_Loc_1,
@@ -241,6 +277,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     boolean Func_2(String String_Par_1_Ref, String String_Par_2_Ref) {
 
         int Int_Loc;
@@ -266,6 +303,7 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     boolean Func_3(int Enum_Par_Val) {
 
         int Enum_Loc;
@@ -278,38 +316,27 @@ public class dhry extends GlobalVariables implements Runnable {
 
     }
 
+    /* dhry.java method */
     public static void main(String argv[]) {
-	Msg.out = System.err;
-
-	Msg.out.println("Dhrystone Benchmark, Version 2.1 (Language: Java)");
-	Msg.out.println();
-	Msg.out.print("Please give the number of runs through the benchmark: ");
-	Msg.out.flush();
-	dhry dh = new dhry();
-	try {
-	    BufferedReader rdr
-		= new BufferedReader(new InputStreamReader(System.in));
-	    dh.Number_Of_Runs = Long.valueOf(rdr.readLine()).longValue();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    return;
-	}
-
-	dh.execute();
+            //Msg_out = System.err;
+    
+            System.err.println("Dhrystone Benchmark, Version 2.1 (Language: Java)");
+            System.err.println();
+            //System.err.println("Please give the number of runs through the benchmark: ");
+            dhry dh = new dhry();
+            /*
+            try {
+                BufferedReader rdr
+                    = new BufferedReader(new InputStreamReader(System.in));
+                dh.Number_Of_Runs = Long.valueOf(rdr.readLine()).longValue();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+            */
+            dh.Number_Of_Runs = 10000000;
+    
+            dh.execute();
     }
-
-    /**
-     * java.lang.Runnable stuff
-     */
-    public void run()  {
-	execute();
-	if (exitObserver != null) {
-	    exitObserver.exitNotify();
-	}
-    }
-
-    public void setExitObserver(ExitObserver eo) {
-	exitObserver = eo;
-    }
-
 }
+
