@@ -300,11 +300,47 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         }
         printf("\n");
     }
-    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
-    /* TODO */
+    int obj_ref = create_instance(dex, vm, type_id);
+    store_to_reg(vm, reg_idx_vx, (unsigned char*)&obj_ref);
     *pc = *pc + 4;
     return 0;
 }
+
+/* 0x23 new-array vy, vx,type_id
+ * Generates a new array of type_id type and vy element
+ * size and puts the reference to the array into vx.
+ *
+ * 2312 2500 - new-array v2, v1, char[] // type@0025
+ * Generates a new array of type@0025 type and v1 size
+ * and puts the reference to the new array into v2.
+ */
+static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int type_id = 0, size = 0;
+    type_id_item *type_item = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F ;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F ;
+
+    type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    type_item = get_type_item(dex, type_id);
+
+    if (is_verbose()) {
+        printf("new-array v%d, v%d ,type_id 0x%04x", reg_idx_vy, reg_idx_vx, type_id);
+        if (type_item != 0) {
+            printf(" %s", get_string_data(dex, type_item->descriptor_idx));
+        }
+        printf("\n");
+    }
+    load_reg_to(vm, reg_idx_vy, (unsigned char*)&size);
+    int arr_ref = create_array(dex, vm, type_id, size);
+    store_to_reg(vm, reg_idx_vx, (unsigned char*)&arr_ref);
+    *pc = *pc + 4;
+    return 0;
+}
+
 
 /* 35c format
  * A|G|op BBBB F|E|D|C
@@ -1563,19 +1599,17 @@ static int op_sput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 {
     int reg_idx_vx = 0;
     int target_field_id = 0;
-    int source_field_id = 0;
+    int object_reference = 0;
     field_id_item *s = NULL, *t = NULL;
 
     reg_idx_vx = ptr[*pc + 1];
     target_field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     if (is_verbose()) {
-        printf("sput-object v%d, field 0x%04x\n", reg_idx_vx, target_field_id);
+        printf("sput-object v%d, field 0x%04x to 0x%04x\n", reg_idx_vx, object_reference, target_field_id);
     }
-    load_reg_to(vm, reg_idx_vx, (unsigned char *) &source_field_id);
-    s = get_field_item(dex,source_field_id);
-    t = get_field_item(dex,target_field_id);
-    *t = *s;
+    load_reg_to(vm, reg_idx_vx, (unsigned char *) &object_reference);
+    memcpy(vm->static_field_value[target_field_id].data, (unsigned char*)&object_reference, sizeof(int));
     *pc = *pc + 4;
     return 0;
 
@@ -1638,6 +1672,7 @@ static byteCode byteCodes[] = {
     { "check-cast"        , 0x1f, 4,  op_check_cast },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
+    { "new-array"         , 0x23, 4,  op_new_array },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "sput-object"       , 0x69, 4,  op_sput_object },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },

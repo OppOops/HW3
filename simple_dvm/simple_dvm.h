@@ -91,18 +91,6 @@ typedef struct _encoded_method {
     code_item code_item;
 } encoded_method;
 
-typedef struct _java_object {
-    ushort type_id;
-    encoded_field *static_fields;
-    encoded_method *direct_methods;
-    encoded_method *virtual_methods;
-    struct _java_object *list;
-} java_object;
-
-typedef struct _field_value{
-    java_object* object;
-    unsigned char data[8];
-} field_value;
 
 /* field_ids */
 typedef struct _field_id_item {
@@ -140,6 +128,25 @@ typedef struct _class_data_item {
     encoded_method *direct_methods;
     encoded_method *virtual_methods;
 } class_data_item;
+
+struct _field_value;
+
+typedef struct _java_object {
+    uint class_idx;
+    class_data_item* class_info;
+    struct _field_value* instance_fields;    
+} java_object;
+
+typedef struct _field_value{
+    uint type_idx;
+    unsigned char data[8];
+} field_value;
+
+typedef struct _java_array {
+    uint type_idx;
+    uint size;
+    field_value* list; 
+} java_array;
 
 typedef struct _DexHeader {
     u1 magic[8]; /* includes version number */
@@ -207,6 +214,7 @@ type_list *get_proto_type_list(DexFileFormat *dex, int proto_id);
 /* field_ids parser */
 void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset);
 field_id_item *get_field_item(DexFileFormat *dex, int field_id);
+int get_field_type(DexFileFormat *dex, int field_id);
 
 /* method ids parser */
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset);
@@ -214,6 +222,7 @@ method_id_item *get_method_item(DexFileFormat *dex, int method_id);
 
 /* class defs parser */
 void parse_class_defs(DexFileFormat *dex, unsigned char *buf, int offset);
+class_data_item* get_class_data_item(DexFileFormat *dex, int class_idx);
 
 int get_uleb128_len(unsigned char *buf, int offset, int *size);
 
@@ -237,9 +246,14 @@ typedef struct _simple_dalvik_vm {
     u1 result[8];
     uint pc;
     uint object_length;
-    field_value* field_value;
-    java_object* dvm_object;
+    uint array_number;
+    field_value* static_field_value;
+    java_object* object[8192];
+    java_array* array[512];
 } simple_dalvik_vm;
+
+int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id);
+int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size);
 
 /* convert to int ok */
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);

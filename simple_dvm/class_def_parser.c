@@ -200,3 +200,12 @@ void parse_class_defs(DexFileFormat *dex, unsigned char *buf, int offset)
                               dex->class_def_item[i].class_data_off - sizeof(DexHeader), i);
     }
 }
+
+class_data_item* get_class_data_item(DexFileFormat *dex, int class_idx){
+    int i = 0;
+    for(i=0;i<dex->header.classDefsSize;i++){
+        if(class_idx == dex->class_def_item[i].class_idx)
+            return (dex->class_data_item) + i;
+    }
+    return NULL;
+}

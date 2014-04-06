@@ -48,7 +48,7 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
         } else {
             printRegs(vm);
             printf("Unknow OpCode =%02x \n", opCode);
-            break;
+            exit(0);
         }
     }
     printf("end Method\n");
@@ -141,6 +141,7 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
 {
     char clinit[] = "<clinit>";
     memset(vm , 0, sizeof(simple_dalvik_vm));
+    vm->static_field_value = (field_value*) malloc(sizeof(field_value) * (dex->header.fieldIdsSize) );
     invoke_method_entry(dex,vm,clinit,1);
     invoke_method_entry(dex,vm,entry,1);
 }

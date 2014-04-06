@@ -36,8 +36,46 @@ int check_primitive(char *str){
     }
     return -1;
 }
-int create_instance(DexFileFormat *dex, int type_id){
 
+
+void init_instance_field(DexFileFormat *dex, field_value* f, encoded_field* e, int size){
+   int i = 0;
+   int acc = 0;
+   for(i=0;i<size;i++){
+       acc = acc + e[i].field_idx_diff;
+       f[i].type_idx = get_field_type(dex, acc);
+   } 
+}
+
+int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id){
+    int* length = &(vm->object_length);
+    java_object* new_object = (java_object*) malloc(sizeof(java_object)); 
+    class_data_item *class_info = get_class_data_item(dex, type_id);
+    int ins_size = class_info->instance_fields_size;
+
+    vm->object[*length] = new_object;
+    *length = *length + 1;
+    new_object->class_idx       = type_id;
+    new_object->class_info      = class_info;
+    new_object->instance_fields = (field_value*) malloc(sizeof(field_value)*ins_size);
+    init_instance_field(dex, new_object->instance_fields, new_object->class_info->instance_fields, ins_size);
+    return (*length) - 1;
+}
+
+int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size){
+    int i = 0;
+    int* length = &(vm->array_number);
+    java_array* new_array = (java_array*) malloc(sizeof(java_array));
+    field_value* list = (field_value*) malloc(sizeof(field_value)*size);
+    for(i=0;i<size;i++)
+        list[i].type_idx = type_id;
+    //printf("create arr, length = %d, size = %d\n",*length,size);
+    vm->array[*length] = new_array;
+    *length = *length + 1;
+    new_array->type_idx       = type_id;
+    new_array->size           = size;
+    new_array->list           = list;
+    return (*length) - 1;
 }
 
 
@@ -182,5 +220,12 @@ field_id_item *get_field_item(DexFileFormat *dex, int field_id)
 {
     if (field_id >= 0 && field_id < dex->header.fieldIdsSize)
         return &dex->field_id_item[field_id];
+    return 0;
+}
+
+int get_field_type(DexFileFormat *dex, int field_id)
+{
+    if (field_id >= 0 && field_id < dex->header.fieldIdsSize)
+        return dex->field_id_item[field_id].type_idx;
     return 0;
 }
