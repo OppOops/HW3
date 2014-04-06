@@ -65,12 +65,12 @@ int parseDexFile(char *file, DexFileFormat *dex)
         return -1;
     }
     memset(dex, 0, sizeof(dex));
-    fread(&dex->header, sizeof(DexHeader), 1, fp);
+    if(fread(&dex->header, sizeof(DexHeader), 1, fp)==0) return 0;
     buf = (unsigned char *) malloc(
               sizeof(u1) * (dex->header.fileSize - sizeof(DexHeader)));
 
     /* read all value into buf */
-    fread(buf, (dex->header.fileSize - sizeof(DexHeader)), 1, fp);
+    if(fread(buf, (dex->header.fileSize - sizeof(DexHeader)), 1, fp)==0) return 0;
     fclose(fp);
 
     parse_map_list(dex, buf, dex->header.mapOff - sizeof(DexHeader));

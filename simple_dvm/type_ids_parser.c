@@ -5,12 +5,47 @@
  */
 
 #include "simple_dvm.h"
+#include <string.h>
+
+static char *type[9] = {"V", // void
+                 "Z", // boolean
+                 "B", // byte
+                 "S", // short
+                 "C", // char
+                 "I", // int
+                 "J", // long
+                 "F", // float
+                 "D", // double
+                 };
+static int type_s[9] = { 0, // void
+                  1, // boolean
+                  1, // byte
+                  2, // short
+                  1, // char
+                  4, // int
+                  8, // long
+                  4, // float
+                  8  // double
+                 };
+
+int check_primitive(char *str){
+    int i = 0;
+    for(;i<9;i++){
+        if(strcmp(type[i],str)==0)
+            return type_s[i];
+    }
+    return -1;
+}
+int create_instance(DexFileFormat *dex, int type_id){
+
+}
+
 
 void parse_type_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;
     if (is_verbose() > 3)
-        printf("parse type ids offset = %04x\n", offset + sizeof(DexHeader));
+        printf("parse type ids offset = %04lx\n", offset + sizeof(DexHeader));
     dex->type_id_item = malloc(
                             sizeof(type_id_item) * dex->header.typeIdsSize);
 
@@ -46,7 +81,7 @@ void parse_proto_ids(DexFileFormat *dex, unsigned char *buf, int offset)
     volatile int i = 0, j = 0;
     int idx = 0;
     if (is_verbose() > 3)
-        printf("parse proto ids offset = %04x\n", offset + sizeof(DexHeader));
+        printf("parse proto ids offset = %04lx\n", offset + sizeof(DexHeader));
     dex->proto_id_item = malloc(
                              sizeof(proto_id_item) * dex->header.protoIdsSize);
 
@@ -117,7 +152,7 @@ void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i;
     if (is_verbose() > 3)
-        printf("parse feild ids offset = %04x\n", offset + sizeof(DexHeader));
+        printf("parse feild ids offset = %04lx\n", offset + sizeof(DexHeader));
     dex->field_id_item = malloc(sizeof(field_id_item) * dex->header.fieldIdsSize);
 
     if (is_verbose() > 3)
@@ -126,7 +161,6 @@ void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset)
         memcpy(&dex->field_id_item[i],
                buf + i * sizeof(field_id_item) + offset,
                sizeof(field_id_item));
-
         if (is_verbose() > 3) {
             printf(" field_id_item [%d], class_id = %d %s, type_id = %d %s, name_idx=%d %s\n",
                    i, dex->field_id_item[i].class_idx,

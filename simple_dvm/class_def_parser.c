@@ -80,15 +80,17 @@ static void parse_class_data_item(DexFileFormat *dex,
         dex->class_data_item[index].static_fields = (encoded_field *)
                 malloc(sizeof(encoded_field) *
                        dex->class_data_item[index].static_fields_size);
+        int acc = 0;
         for (j = 0; j < dex->class_data_item[index].static_fields_size; j++) {
 	    if (is_verbose() > 3)
-                printf("offset = %04x ", i + sizeof(DexHeader));
+                printf("offset = %04lx ", i + sizeof(DexHeader));
             dex->class_data_item[index].static_fields[j].field_idx_diff =
                 get_uleb128_len(buf, i, &size);
             i += size;
             dex->class_data_item[index].static_fields[j].access_flags =
                 get_uleb128_len(buf, i, &size);
             i += size;
+            acc = acc + dex->class_data_item[index].static_fields[j].field_idx_diff;
 	    if (is_verbose() > 3)
                 printf("static ecoded_field %d, field_id = %d, access_flag = %04x\n",j,
                        dex->class_data_item[index].static_fields[j].field_idx_diff,
@@ -101,7 +103,7 @@ static void parse_class_data_item(DexFileFormat *dex,
                        dex->class_data_item[index].instance_fields_size);
         for (j = 0; j < dex->class_data_item[index].instance_fields_size; j++) {
             if (is_verbose() > 3)
-                printf("offset = %04x ", i + sizeof(DexHeader));
+                printf("offset = %04lx ", i + sizeof(DexHeader));
             dex->class_data_item[index].instance_fields[j].field_idx_diff =
                 get_uleb128_len(buf, i, &size);
             i += size;
@@ -120,7 +122,7 @@ static void parse_class_data_item(DexFileFormat *dex,
                        dex->class_data_item[index].direct_methods_size);
         for (j = 0; j < dex->class_data_item[index].direct_methods_size; j++) {
             if (is_verbose() > 3)
-                printf("offset = %04x ", i + sizeof(DexHeader));
+                printf("offset = %04lx ", i + sizeof(DexHeader));
             dex->class_data_item[index].direct_methods[j].method_idx_diff =
                 get_uleb128_len(buf, i, &size);
             i += size;
@@ -148,7 +150,7 @@ static void parse_class_data_item(DexFileFormat *dex,
                        dex->class_data_item[index].virtual_methods_size);
         for (j = 0; j < dex->class_data_item[index].virtual_methods_size; j++) {
             if (is_verbose() > 3)
-                printf("offset = %04x ", i + sizeof(DexHeader));
+                printf("offset = %04lx ", i + sizeof(DexHeader));
             dex->class_data_item[index].virtual_methods[j].method_idx_diff =
                 get_uleb128_len(buf, i, &size);
             i += size;
@@ -175,7 +177,7 @@ void parse_class_defs(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;
     if (is_verbose() > 3)
-        printf("parse class defs offset = %04x\n", offset + sizeof(DexHeader));
+        printf("parse class defs offset = %04lx\n", offset + sizeof(DexHeader));
     if (dex->header.classDefsSize <= 0)
         return;
     dex->class_def_item = malloc(

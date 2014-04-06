@@ -13,7 +13,7 @@ static void parse_string_data_item(DexFileFormat *dex,
     int size = 0;
     int len = 0;
     if (is_verbose() > 3)
-        printf("parse string data item offset = %04x ",
+        printf("parse string data item offset = %04lx ",
                offset + sizeof(DexHeader));
     memset(&dex->string_data_item[index], 0, sizeof(string_data_item));
     dex->string_data_item[index].index = index;
@@ -39,7 +39,7 @@ void parse_string_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;
     if (is_verbose() > 3)
-        printf("parse string ids offset = %04x\n", offset + sizeof(DexHeader));
+        printf("parse string ids offset = %04lx\n", offset + sizeof(DexHeader));
     dex->string_ids = malloc(
                           sizeof(string_ids) * dex->header.stringIdsSize);
     dex->string_data_item = malloc(

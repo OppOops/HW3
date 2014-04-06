@@ -8,6 +8,7 @@
 #define SIMPLE_DVM_H
 
 #include <sys/time.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,20 +63,6 @@ typedef struct _proto_id_item {
     uint parameters_off;
 } proto_id_item;
 
-/* field_ids */
-typedef struct _field_id_item {
-    ushort class_idx; /* index into the type_ids list for the definer of this field */
-    ushort type_idx;
-    uint   name_idx;
-} field_id_item;
-
-/* method_ids */
-typedef struct _method_id_tiem {
-    ushort  class_idx; /* index into the type_ids list for the definer of this method */
-    ushort  proto_idx; /* index into the proto_ids list for the prototype of this method */
-    uint    name_idx;
-} method_id_item;
-
 /* class defs */
 typedef struct _code_item {
     ushort registers_size;
@@ -103,6 +90,33 @@ typedef struct _encoded_method {
     uint code_off;
     code_item code_item;
 } encoded_method;
+
+typedef struct _java_object {
+    ushort type_id;
+    encoded_field *static_fields;
+    encoded_method *direct_methods;
+    encoded_method *virtual_methods;
+    struct _java_object *list;
+} java_object;
+
+typedef struct _field_value{
+    java_object* object;
+    unsigned char data[8];
+} field_value;
+
+/* field_ids */
+typedef struct _field_id_item {
+    ushort class_idx; /* index into the type_ids list for the definer of this field */
+    ushort type_idx;
+    uint   name_idx;
+} field_id_item;
+
+/* method_ids */
+typedef struct _method_id_tiem {
+    ushort  class_idx; /* index into the type_ids list for the definer of this method */
+    ushort  proto_idx; /* index into the proto_ids list for the prototype of this method */
+    uint    name_idx;
+} method_id_item;
 
 typedef struct _class_def_item {
     uint class_idx;
@@ -222,6 +236,9 @@ typedef struct _simple_dalvik_vm {
     invoke_parameters p;
     u1 result[8];
     uint pc;
+    uint object_length;
+    field_value* field_value;
+    java_object* dvm_object;
 } simple_dalvik_vm;
 
 /* convert to int ok */
@@ -229,15 +246,16 @@ void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_reg_to_double(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_result_to_double(simple_dalvik_vm *vm, unsigned char *ptr);
 void load_reg_to_long(simple_dalvik_vm *vm, int id, unsigned char *ptr);
-
-void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
-void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_double_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
+void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
+void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_long_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
-
+void store_long_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
+void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id);
 
+void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, int isDirect);
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry);
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 
