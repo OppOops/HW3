@@ -118,6 +118,23 @@ static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
     return 0;
 }
 
+/* 0x0f , return-vx
+ * Return with vx return value
+ * 0F00 - return-v0
+ */
+static int op_return(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    reg_idx_vx = ptr[*pc + 1];
+
+    if (is_verbose())
+        printf("return v%d\n",reg_idx_vx);
+    move_reg_to_bottom_result(vm, reg_idx_vx);
+    *pc = *pc + 2;
+    return 0;
+}
+
+
 /* 0x12, const/4 vx,lit4
  * Puts the 4 bit constant into vx
  * 1221 - const/4 v1, #int2
@@ -225,6 +242,45 @@ static int op_const_wide_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     *pc = *pc + 4;
     return 0;
 }
+
+/* 0x1f, check-cast vx, type_id
+ * Checks whether the object reference in vx can be cast to
+ * an instance of a class referenced by type_id. Throws
+ *  ClassCastException if the cast is not possible, continues
+ * execution otherwise.
+ *
+ * 1F04 0100 - check-cast v4, Test3 // type@0001
+ * Checks whether the object reference in
+ * v4 can be cast to type@0001 (entry #1 in the type id table)
+ */
+
+static int op_check_cast(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int source_field_id = 0;
+    int type_id = 0;
+    field_id_item *s = NULL;
+    reg_idx_vx = ptr[*pc + 1];
+    type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    if (is_verbose())
+        printf("check-cast v%d, fieldd_id 0x%04x\n", reg_idx_vx , type_id);
+    load_reg_to(vm, reg_idx_vx, (unsigned char *) &source_field_id);
+    s = get_field_item(dex,source_field_id);
+    if(s->type_idx == type_id) {
+        *pc = *pc + 4;
+        return 0;
+    }
+    printf("warning: cast failed from %s to %s\n",dex->string_data_item[
+                                                  dex->type_id_item[
+                                                  type_id].descriptor_idx].data,
+
+                                                  dex->string_data_item[
+                                                  dex->type_id_item[
+                                                  s->type_idx].descriptor_idx].data);
+    exit(0);
+}
+
 
 /* 0x1a, const-string vx,string_id
  * Puts reference to a string constant identified by string_id into vx.
@@ -384,7 +440,7 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                                               proto_type_list->type_item[0].type_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                invoke_java_lang_library(dex, vm,
+                return invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx),
                                          get_type_item_name(dex, proto_type_list->type_item[0].type_idx));
@@ -395,7 +451,7 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                            get_string_data(dex, m->name_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                invoke_java_lang_library(dex, vm,
+                return invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx), 0);
             }
@@ -430,13 +486,14 @@ static int op_invoke_virtual(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, 
  */
 static int op_invoke_direct(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
-    invoke_parameters p;
-    int string_id = 0;
+    int pc_current = *pc;
+    op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
 
     op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
-    op_utils_invoke("invoke-direct", dex, vm, &vm->p);
-    /* TODO */
-    *pc = *pc + 6;
+    method_id_item *m = get_method_item(dex, vm->p.method_id);
+    invoke_method_entry(dex,vm, get_string_data(dex, m->name_idx),1);
+    //op_utils_invoke("invoke-direct", dex, vm, &vm->p);
+    *pc = pc_current + 6;
     return 0;
 }
 
@@ -445,13 +502,14 @@ static int op_invoke_direct(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
  */
 static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
-    invoke_parameters p;
-    int string_id = 0;
-
+    int pc_current = *pc;
     op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
-    op_utils_invoke("invoke-static", dex, vm, &vm->p);
-    /* TODO */
-    *pc = *pc + 6;
+
+    method_id_item *m = get_method_item(dex, vm->p.method_id);
+    if(!op_utils_invoke("invoke-static", dex, vm, &vm->p));
+        invoke_method_entry(dex,vm, get_string_data(dex, m->name_idx),1);
+
+    *pc = pc_current + 6;
     return 0;
 }
 
@@ -548,7 +606,7 @@ static int op_mul_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
     reg_idx_vz = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("add-int v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+        printf("mul-int v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
     /* x = y + z */
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     load_reg_to(vm, reg_idx_vz, (unsigned char *) &z);
@@ -575,7 +633,7 @@ static int op_div_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
     reg_idx_vz = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("add-int v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+        printf("div-int v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
     /* x = y + z */
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     load_reg_to(vm, reg_idx_vz, (unsigned char *) &z);
@@ -640,6 +698,29 @@ static int op_add_int_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     *pc = *pc + 2;
     return 0;
 }
+
+/* 0xb1 sub-int/2addr vx,vy
+ * Subtracts vy to vx.
+ * B110 - add-int/2addr v0,v1 subtracts v1 to v0.
+ */
+static int op_sub_int_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F ;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F ;
+    if (is_verbose())
+        printf("add-int/2addr v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+    load_reg_to(vm, reg_idx_vx, (unsigned char *) &x);
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = x - y;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 2;
+    return 0;
+}
+
 
 /* 0xcb , add-double/2addr
  * Adds vy to vx.
@@ -1165,6 +1246,30 @@ op_int_to_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
   return 0;
 }
 
+/* 0x8e int-to-char vx,vy
+ * Converts the int value in vy to a char value and stores it in vx. 
+ *
+ * 8E33  - int-to-char v3, v3
+ * Converts the integer in v3 into a char and puts the char value into v3.
+ */
+static int op_int_to_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+    int reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
+    int value1 = 0L, value2 = 0L;
+    unsigned char* ptr2 = (unsigned char*) &value1;
+    load_reg_to(vm, reg_idx_vx, ptr2);
+    value2 = ptr2[0];
+    if (is_verbose()) {
+        printf("int-to-char v%d, v%d\n", reg_idx_vy, reg_idx_vx);
+        printf("int %d to char %d\n", value1, value2);
+    }
+    store_long_to_reg(vm, reg_idx_vy, (unsigned char*)&value2);
+    *pc = *pc + 2;
+    return 0;
+}
+
+
+
 static int op_sub_long_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
     int reg_idx_vx = ptr[*pc + 1] & 0x0F;
     int reg_idx_vy = (ptr[*pc + 1]>>4) & 0x0F;
@@ -1539,6 +1644,7 @@ static byteCode byteCodes[] = {
     { "if-lez"            , 0x3d, 4,  op_if_lez },
     { "long-to-int"       , 0x84, 2,  op_long_to_int},
     { "int-to-long"       , 0x84, 2,  op_int_to_long},
+    { "int-to-char"       , 0x8e, 2,  op_int_to_char},
     { "sub-long/2addr"    , 0xbb, 2,  op_add_long_2addr },
     { "sub-long/2addr"    , 0xbc, 2,  op_sub_long_2addr },
     { "mul-long/2addr"    , 0xbd, 2,  op_mul_long_2addr },
@@ -1550,11 +1656,13 @@ static byteCode byteCodes[] = {
     { "move-result-wide"  , 0x0B, 2,  op_move_result_wide },
     { "move-result-object", 0x0C, 2,  op_move_result_object },
     { "return-void"       , 0x0e, 2,  op_return_void },
+    { "return"            , 0x0f, 2,  op_return },
     { "const/4"           , 0x12, 2,  op_const_4 },
     { "const/16"          , 0x13, 4,  op_const_16 },
     { "const-wide/16"     , 0x16, 4,  op_const_wide_16 },
     { "const-wide/32"     , 0x17, 6,  op_const_wide_32 },
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
+    { "check-cast"        , 0x1f, 4,  op_check_cast },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
     { "sget-object"       , 0x62, 4,  op_sget_object },
@@ -1568,6 +1676,7 @@ static byteCode byteCodes[] = {
     { "mul-int"           , 0x92, 4,  op_mul_int },
     { "div-int"           , 0x93, 4,  op_div_int },
     { "add-int/2addr"     , 0xb0, 2,  op_add_int_2addr},
+    { "add-int/2addr"     , 0xb1, 2,  op_sub_int_2addr},
     { "add-double/2addr"  , 0xcb, 2,  op_add_double_2addr},
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "add-int/lit8"      , 0xd8, 4,  op_add_int_lit8 },
@@ -1606,22 +1715,63 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
             break;
         }
     }
+    printf("end Method\n");
 }
 
-void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
-{
+void copy_parameter( simple_dalvik_vm *vm, int reg_size, int reg_count, int *reg_idx){
+     int i = 0;
+     int m = reg_size - 1;
+     simple_dvm_register tmp[5];
+     if (is_verbose() > 2)
+        printf("copy parameter, function reg_size = %d, reg_count = %d\n",reg_size,reg_count);
+     for(;i<reg_count;i++)
+         tmp[i] = vm->regs[reg_idx[i]];
+     for(;reg_count>=0;m--)
+         vm->regs[m] = tmp[--reg_count];
+}
+
+void invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method* m_Arr, int size, int method_idx, int class_idx){
     int i = 0;
-    int method_name_idx = -1;
+    int method_acc_idx = 0;
+    for(i=0;i<size;i++){
+        method_acc_idx += m_Arr[i].method_idx_diff;
+        if(method_acc_idx == method_idx){
+            if (is_verbose() > 2)
+            printf("find method %d in class item %d, direct_method %d\n",method_idx,class_idx,i);
+            method_idx = i;
+            break;
+        }
+    }
+    encoded_method *m = m_Arr + method_idx;
+    if (is_verbose() > 2)
+        printf("encoded_method method_id = %d, insns_size = %d, reg_size = %d\n",
+               m->method_idx_diff, m->code_item.insns_size, m->code_item.registers_size);
+    copy_parameter(vm, m->code_item.registers_size, vm->p.reg_count, vm->p.reg_idx);
+    runMethod(dex, vm, m);
+}
+
+void invoke_direct_by_id(DexFileFormat *dex, simple_dalvik_vm *vm, int method_idx, int class_idx){
+    invoke_method(dex, vm,
+                 dex->class_data_item[class_idx].direct_methods,
+                 dex->class_data_item[class_idx].direct_methods_size,
+                 method_idx,class_idx);
+}
+
+void invoke_virtual_by_id(DexFileFormat *dex, simple_dalvik_vm *vm, int method_idx, int class_idx){
+    invoke_method(dex, vm,
+                 dex->class_data_item[class_idx].virtual_methods,
+                 dex->class_data_item[class_idx].virtual_methods_size,
+                 method_idx,class_idx);
+}
+
+void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, int isDirect){
+
+    int i = 0;
     int method_idx = -1;
     int class_idx = -1;
     int class_def_idx = -1;
+    int method_name_idx = find_const_string(dex, entry);
 
-    method_name_idx = find_const_string(dex, entry);
-
-    if (method_name_idx < 0) {
-        printf("no method %s in dex\n", entry);
-        return;
-    }
     for (i = 0 ; i < dex->header.methodIdsSize; i++)
         if (dex->method_id_item[i].name_idx == method_name_idx) {
             if (is_verbose() > 2)
@@ -1631,6 +1781,7 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
             method_idx = i;
             break;
         }
+
     if (class_idx < 0 || method_idx < 0) {
         printf("no method %s in dex\n", entry);
         return;
@@ -1640,30 +1791,18 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
         if(class_idx == dex->class_def_item[i].class_idx){
             class_def_idx = i;
             if (is_verbose() > 2)
-		printf("find class_idx in class item %d\n",i);
+                printf("find class_idx in class item %d\n",i);
             break;
         }
     }
-    
-    int method_acc_idx = 0;
-    int end = dex->class_data_item[class_def_idx].direct_methods_size;
-    for(i=0;i<end;i++){
-        method_acc_idx += dex->class_data_item[class_def_idx].direct_methods[i].method_idx_diff;
-        if(method_acc_idx == method_idx){
-            if (is_verbose() > 2)
-            printf("find method %d in class item %d, direct_method %d\n",method_idx,class_def_idx,i);
-            method_idx = i;
-            break;
-        }
-    }
+    if(isDirect)
+        invoke_direct_by_id(dex, vm, method_idx, class_def_idx);
+    else
+        invoke_virtual_by_id(dex, vm, method_idx, class_def_idx);
+}
 
-    encoded_method *m =
-        &dex->class_data_item[class_def_idx].direct_methods[method_idx];
-
-    if (is_verbose() > 2)
-        printf("encoded_method method_id = %d, insns_size = %d\n",
-               m->method_idx_diff, m->code_item.insns_size);
-
+void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
+{
     memset(vm , 0, sizeof(simple_dalvik_vm));
-    runMethod(dex, vm, m);
+    invoke_method_entry(dex,vm,entry,1);
 }
