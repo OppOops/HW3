@@ -1,8 +1,8 @@
 public class Benchmark{
     public static void main(String[] args){
-        final int iter1 = 1000;
-        final int iter2 = 1000;
-        final int iter3 = 100;
+        final int iter1 = 1;
+        final int iter2 = 1;
+        final int iter3 = 10;
         int counter = 0;
         long startTime = java.lang.System.currentTimeMillis();
         for(int i = 0;i<iter1;i++){

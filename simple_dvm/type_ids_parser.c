@@ -51,6 +51,8 @@ int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id){
     int* length = &(vm->object_length);
     java_object* new_object = (java_object*) malloc(sizeof(java_object)); 
     class_data_item *class_info = get_class_data_item(dex, type_id);
+    if(class_info==NULL)
+        return -1;
     int ins_size = class_info->instance_fields_size;
 
     vm->object[*length] = new_object;
@@ -76,6 +78,13 @@ int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size
     new_array->size           = size;
     new_array->list           = list;
     return (*length) - 1;
+}
+int create_array_filled(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size, int content){
+    int idx = create_array(dex,  vm,  type_id,  size);
+    java_array* new_array = vm->array[idx];
+    for(int i=0;i<size;i++)
+	memcpy(new_array->list[i].data ,&content, sizeof(int));
+    return idx;
 }
 
 

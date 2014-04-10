@@ -254,6 +254,7 @@ typedef struct _simple_dalvik_vm {
 
 int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id);
 int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size);
+int create_array_filled(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size, int content);
 
 /* convert to int ok */
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
@@ -268,6 +269,7 @@ void store_long_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id);
+void move_int_to_bottom_result(simple_dalvik_vm *vm, int result);
 
 void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, int isDirect);
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry);

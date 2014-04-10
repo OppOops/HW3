@@ -149,3 +149,10 @@ void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id){
     vm->result[3] = r->data[3];
 
 }
+void move_int_to_bottom_result(simple_dalvik_vm *vm, int result){
+    unsigned char *data = (unsigned char*) &result;
+    vm->result[0] = data[0];
+    vm->result[1] = data[1];
+    vm->result[2] = data[2];
+    vm->result[3] = data[3];
+}

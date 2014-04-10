@@ -341,6 +341,42 @@ static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *
     return 0;
 }
 
+/*Not sure implementation is correct or not*/
+static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int size = 0;
+    int p1 = 0;
+    int p2 = 0;
+    int p3 = 0;
+    int p4 = 0;
+    int p5 = 0;
+    int type_id = 0, content = 0;
+    type_id_item *type_item = 0;
+    size = ptr[*pc + 1] >> 4;
+    p1 = ptr[*pc + 4] & 0x0F ;
+    p2 = ptr[*pc + 4] >> 4 ;
+    p3 = ptr[*pc + 5] & 0x0f ;
+    p4 = ptr[*pc + 5] >> 4 ;
+    p5 = ptr[*pc + 1] & 0x0F ;
+
+    type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    type_item = get_type_item(dex, type_id);
+
+    if (is_verbose()) {
+        printf("filled-new-array %d v%d, v%d, type_id 0x%04x", size, p1, p2, type_id);
+        if (type_item != 0) {
+            printf(" %s", get_string_data(dex, type_item->descriptor_idx));
+        }
+        printf("\n");
+    }
+    load_reg_to(vm, p1, (unsigned char*)&content);
+    int ref = create_array_filled(dex, vm, type_id, size, content);
+    move_int_to_bottom_result(vm,ref);
+    *pc = *pc + 6;
+    return 0;
+}
+
+
 
 /* 35c format
  * A|G|op BBBB F|E|D|C
@@ -500,7 +536,8 @@ static int op_invoke_direct(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
 
     op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
     method_id_item *m = get_method_item(dex, vm->p.method_id);
-    invoke_method_entry(dex,vm, get_string_data(dex, m->name_idx),1);
+    if(!op_utils_invoke("invoke-direct", dex, vm, &vm->p))
+        invoke_method_entry(dex,vm, get_string_data(dex, m->name_idx),1);
     //op_utils_invoke("invoke-direct", dex, vm, &vm->p);
     *pc = pc_current + 6;
     return 0;
@@ -515,7 +552,7 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
 
     method_id_item *m = get_method_item(dex, vm->p.method_id);
-    if(!op_utils_invoke("invoke-static", dex, vm, &vm->p));
+    if(!op_utils_invoke("invoke-static", dex, vm, &vm->p))
         invoke_method_entry(dex,vm, get_string_data(dex, m->name_idx),1);
 
     *pc = pc_current + 6;
@@ -1672,6 +1709,7 @@ static byteCode byteCodes[] = {
     { "check-cast"        , 0x1f, 4,  op_check_cast },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
+    { "filled-new-array " , 0x24, 6,  op_filled_new_array },
     { "new-array"         , 0x23, 4,  op_new_array },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "sput-object"       , 0x69, 4,  op_sput_object },

@@ -97,6 +97,11 @@ int java_lang_system_currenttimemillis(DexFileFormat *dex, simple_dalvik_vm *vm,
     return 0;
 }
 
+static int java_lang_reflect_Array_newInstance(DexFileFormat *dex, simple_dalvik_vm *vm, char *type){
+    
+    return 0;
+}
+
 
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
@@ -104,7 +109,8 @@ static java_lang_method method_table[] = {
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string},
-    {"Ljava/lang/System;",        "currentTimeMillis", java_lang_system_currenttimemillis}
+    {"Ljava/lang/System;",        "currentTimeMillis", java_lang_system_currenttimemillis},
+    {"Ljava/lang/reflect/Array;", "newInstance", java_lang_reflect_Array_newInstance}
 };
 
 static int java_lang_method_size = sizeof(method_table) / sizeof(java_lang_method);
@@ -129,5 +135,6 @@ int invoke_java_lang_library(DexFileFormat *dex, simple_dalvik_vm *vm,
         method->method_runtime(dex, vm, type);
         return 1;
     }
+    printf("static method %s in class %s type:%s not found\n", method_name, cls_name, type);
     return 0;
 }
