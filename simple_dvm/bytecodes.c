@@ -230,7 +230,7 @@ static int op_const_wide_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
 static int op_check_cast(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int reg_idx_vx = 0;
-    int source_field_id = 0;
+    int object_reference = 0;
     int type_id = 0;
     field_id_item *s = NULL;
     reg_idx_vx = ptr[*pc + 1];
@@ -238,8 +238,9 @@ static int op_check_cast(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
 
     if (is_verbose())
         printf("check-cast v%d, fieldd_id 0x%04x\n", reg_idx_vx , type_id);
-    load_reg_to(vm, reg_idx_vx, (unsigned char *) &source_field_id);
-    s = get_field_item(dex,source_field_id);
+    load_reg_to(vm, reg_idx_vx, (unsigned char *) &object_reference);
+
+    //s = get_field_item(dex,source_field_id);
     if(s->type_idx == type_id) {
         *pc = *pc + 4;
         return 0;
