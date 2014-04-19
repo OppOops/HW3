@@ -98,14 +98,43 @@ int java_lang_system_currenttimemillis(DexFileFormat *dex, simple_dalvik_vm *vm,
 }
 
 static int java_lang_reflect_Array_newInstance(DexFileFormat *dex, simple_dalvik_vm *vm, char *type){
-    
+    /*Using new_instance*/
+    int idx_p1 = vm->p.reg_idx[0];
+    int idx_p2 = vm->p.reg_idx[1];
+    int type_obj,ref,size;
+    java_array* array_info = NULL;
+    load_reg_to(vm,idx_p1,(unsigned char*)&type_obj);
+    load_reg_to(vm,idx_p2,(unsigned char*)&ref);
+    if(ref>=8192){
+        ref -= 8192;
+        array_info = vm->array[ref];
+    }
+    //create out index of array [[I
+    char buffer[256]="[";
+    strcpy(buffer+1,dex->string_data_item[dex->type_id_item[array_info->type_idx].descriptor_idx].data);
+    int outer_idx = create_array(dex,vm,get_type_item_by_name(dex,buffer),array_info->size);
+    field_value* list = vm->array[outer_idx-8192]->list;
+    int i = 0;
+    for(;i<array_info->size;i++){
+         //should according to the type create array or instance
+         // write as no type checking
+         int inner_idx = create_array(dex,vm,array_info->type_idx,array_info->size);
+         memcpy(list[i].data, &inner_idx, sizeof(int));
+         list[i].type_idx = array_info->type_idx;
+         //printf("list[i].data = %d\n", *((int*)list[i].data) );
+    }
+    move_int_to_bottom_result(vm,outer_idx);
     return 0;
 }
 
+static int java_lang_obj_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *type){
+
+}
 
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
     {"Ljava/io/PrintStream;",     "println",  java_io_print_stream_println},
+    {"Ljava/lang/Object;",        "<init>",   java_lang_obj_init},
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string},

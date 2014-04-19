@@ -75,6 +75,8 @@ static int op_move_result_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *p
     if (is_verbose())
         printf("move-result-object v%d\n", reg_idx_vx);
     move_bottom_half_result_to_reg(vm, reg_idx_vx);
+    int test = -1; load_reg_to(vm, reg_idx_vx, (unsigned char*)&test);
+    printf("@@test = %d\n",test);
     *pc = *pc + 2;
     return 0;
 }
@@ -232,26 +234,31 @@ static int op_check_cast(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     int reg_idx_vx = 0;
     int object_reference = 0;
     int type_id = 0;
-    field_id_item *s = NULL;
+    int s_type_idx = 0;
     reg_idx_vx = ptr[*pc + 1];
     type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     if (is_verbose())
-        printf("check-cast v%d, fieldd_id 0x%04x\n", reg_idx_vx , type_id);
+        printf("check-cast v%d, type_id 0x%04x\n", reg_idx_vx , type_id);
     load_reg_to(vm, reg_idx_vx, (unsigned char *) &object_reference);
-
+    
+    if(object_reference >= 8192){
+        object_reference -= 8192;
+        s_type_idx = (vm->array[object_reference])->type_idx;
+    }
+    
     //s = get_field_item(dex,source_field_id);
-    if(s->type_idx == type_id) {
+    if(s_type_idx == type_id) {
         *pc = *pc + 4;
         return 0;
     }
-    printf("warning: cast failed from %s to %s\n",dex->string_data_item[
-                                                  dex->type_id_item[
-                                                  type_id].descriptor_idx].data,
+    printf("warning: cast failed from %s(%d) to %s(%d)\n",dex->string_data_item[
+                                                         dex->type_id_item[
+                                                         type_id].descriptor_idx].data, type_id,
 
-                                                  dex->string_data_item[
-                                                  dex->type_id_item[
-                                                  s->type_idx].descriptor_idx].data);
+                                                         dex->string_data_item[
+                                                         dex->type_id_item[
+                                                         s_type_idx].descriptor_idx].data, s_type_idx);
     exit(0);
 }
 
@@ -329,7 +336,7 @@ static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *
     type_item = get_type_item(dex, type_id);
 
     if (is_verbose()) {
-        printf("new-array v%d, v%d ,type_id 0x%04x", reg_idx_vy, reg_idx_vx, type_id);
+        printf("new-array v%d, v%d ,type_id 0x%04x", reg_idx_vx, reg_idx_vy, type_id);
         if (type_item != 0) {
             printf(" %s", get_string_data(dex, type_item->descriptor_idx));
         }
@@ -364,13 +371,17 @@ static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     type_item = get_type_item(dex, type_id);
 
     if (is_verbose()) {
+        int i = 0;
+        for(;i<3;i++){
+            printf("%02x%02x ",(unsigned char)ptr[*pc + i*2],(unsigned char)ptr[*pc + i*2 +1]);
+        }
         printf("filled-new-array %d v%d, v%d, type_id 0x%04x", size, p1, p2, type_id);
         if (type_item != 0) {
             printf(" %s", get_string_data(dex, type_item->descriptor_idx));
         }
         printf("\n");
     }
-    load_reg_to(vm, p1, (unsigned char*)&content);
+    load_reg_to(vm, p1, (unsigned char*)&size);
     int ref = create_array_filled(dex, vm, type_id, size, content);
     move_int_to_bottom_result(vm,ref);
     *pc = *pc + 6;
@@ -1643,32 +1654,36 @@ static int op_sput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
     reg_idx_vx = ptr[*pc + 1];
     target_field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
+    load_reg_to(vm, reg_idx_vx, (unsigned char *) &object_reference);
     if (is_verbose()) {
         printf("sput-object v%d, field 0x%04x to 0x%04x\n", reg_idx_vx, object_reference, target_field_id);
     }
-    load_reg_to(vm, reg_idx_vx, (unsigned char *) &object_reference);
     memcpy(vm->static_field_value[target_field_id].data, (unsigned char*)&object_reference, sizeof(int));
     *pc = *pc + 4;
     return 0;
 
 }
 
-static int op_input_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
+static int op_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc){
     int reg_idx_vx = 0;
     int reg_idx_vx_p1 = 0;
     int reg_idx_vy = 0;
     int target_field_id = 0;
-    field_id_item *t = NULL;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
     reg_idx_vx_p1 = reg_idx_vx + 1;
 	
     target_field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose()) {
-        printf("input-wide v%d, v%d, field 0x%04x\n", reg_idx_vx, reg_idx_vy, target_field_id);
+        printf("iput-wide v%d, v%d, field 0x%04x\n", reg_idx_vx, reg_idx_vy, target_field_id);
     }
-    
-
+    int obj_ref;
+    load_reg_to(vm,reg_idx_vy,(unsigned char*)&obj_ref);
+    unsigned char *ptr_x = vm->object[obj_ref]->instance_fields[target_field_id].data;
+    load_reg_to_double(vm, reg_idx_vx   , ptr_x + 4);    
+    load_reg_to_double(vm, reg_idx_vx_p1, ptr_x );    
+    *pc = *pc + 4;
+    return 0;
 }
 
 static byteCode byteCodes[] = {
@@ -1727,9 +1742,10 @@ static byteCode byteCodes[] = {
     { "add-double/2addr"  , 0xcb, 2,  op_add_double_2addr},
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "add-int/lit8"      , 0xd8, 4,  op_add_int_lit8 },
-    { "add-int/lit8"      , 0xd9, 4,  op_sub_int_lit8 },
-    { "add-int/lit8"      , 0xda, 4,  op_mul_int_lit8 },
-    { "div-int/lit8"      , 0xdb, 4,  op_div_int_lit8 }
+    { "sub-int/lit8"      , 0xd9, 4,  op_sub_int_lit8 },
+    { "mul-int/lit8"      , 0xda, 4,  op_mul_int_lit8 },
+    { "div-int/lit8"      , 0xdb, 4,  op_div_int_lit8 },
+    { "iput-wide"         , 0x5a, 4,  op_iput_wide }
 };
 static unsigned int byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
 

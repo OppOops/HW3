@@ -65,6 +65,7 @@ int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id){
 }
 
 int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size){
+    //printf("create array, size = %d\n",size);
     int i = 0;
     int* length = &(vm->array_number);
     java_array* new_array = (java_array*) malloc(sizeof(java_array));
@@ -77,14 +78,18 @@ int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size
     new_array->type_idx       = type_id;
     new_array->size           = size;
     new_array->list           = list;
-    return (*length) - 1;
+    return (*length) - 1 + 8192;
 }
+
+
+
+
 int create_array_filled(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size, int content){
-    int idx = create_array(dex,  vm,  type_id,  size);
+    int idx = create_array(dex,  vm,  type_id,  size) - 8192;
     java_array* new_array = vm->array[idx];
     for(int i=0;i<size;i++)
 	memcpy(new_array->list[i].data ,&content, sizeof(int));
-    return idx;
+    return idx + 8192;
 }
 
 
@@ -114,6 +119,16 @@ type_id_item *get_type_item(DexFileFormat *dex, int type_id)
         return &dex->type_id_item[type_id];
     return 0;
 }
+int get_type_item_by_name(DexFileFormat *dex, char* str){
+    int i = 0;
+    for(;i<dex->header.typeIdsSize;i++){
+        char* t = dex->string_data_item[dex->type_id_item[i].descriptor_idx].data;
+        if(strcmp(str,t)==0) 
+            return i;
+    }
+    return -1;
+}
+
 
 char *get_type_item_name(DexFileFormat *dex, int type_id)
 {

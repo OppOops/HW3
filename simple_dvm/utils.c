@@ -143,16 +143,16 @@ void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id)
 
 void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id){
     simple_dvm_register *r = &vm->regs[id];
-    vm->result[0] = r->data[0];
-    vm->result[1] = r->data[1];
-    vm->result[2] = r->data[2];
-    vm->result[3] = r->data[3];
+    vm->result[4] = r->data[0];
+    vm->result[5] = r->data[1];
+    vm->result[6] = r->data[2];
+    vm->result[7] = r->data[3];
 
 }
 void move_int_to_bottom_result(simple_dalvik_vm *vm, int result){
     unsigned char *data = (unsigned char*) &result;
-    vm->result[0] = data[0];
-    vm->result[1] = data[1];
-    vm->result[2] = data[2];
-    vm->result[3] = data[3];
+    vm->result[4] = data[0];
+    vm->result[5] = data[1];
+    vm->result[6] = data[2];
+    vm->result[7] = data[3];
 }

@@ -204,6 +204,7 @@ char *get_string_data(DexFileFormat *dex, int string_id);
 /* type_ids parser */
 void parse_type_ids(DexFileFormat *dex, unsigned char *buf, int offset);
 type_id_item *get_type_item(DexFileFormat *dex, int type_id);
+int get_type_item_by_name(DexFileFormat *dex, char* str);
 char *get_type_item_name(DexFileFormat *dex, int type_id);
 
 /* proto_ids parser */
