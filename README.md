@@ -9,6 +9,8 @@
 
 ---------------------------------------------
 
+0. 先將virtual-method放好對應的refrence (此步驟未測量時間)
+
 1. 改進原本dispatch尋找opcode的效率, 使用事先建好的lookuptable, 時間由 51 sec 降為 20 sec.
 
 2. 去除冗長的計算, 改用較少的function call(例如移除debug message, 不必要的type check) 時間由20 sec 降為 16.5 sec
@@ -18,6 +20,8 @@
 4. 使用direct threaded code, 時間由 13.6 sec 降為 11.1 sec
 
 5. 將load_to_reg以及store_to_reg改成define marco, 時間由 11.1 sec 降為 8.08 sec
+
+6. aosp dalvik-vm 時間 約為 7秒, JVM約為0.2秒
 
 p.s. 1. 由於不會用makefile定義marco, 所以必須手動更改simple_dvm.h 的內容
   
