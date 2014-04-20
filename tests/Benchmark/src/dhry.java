@@ -80,7 +80,7 @@ public class dhry {
             String_Loc_2 = "DHRYSTONE PROGRAM, 2'ND STRING";
 
             Enum_Loc[0] = Ident_2;
-            Bool_Glob = !Func_2(String_Loc_1, String_Loc_2);
+            //Bool_Glob = !Func_2(String_Loc_1, String_Loc_2);
 
             while (Int_Loc_1 < Int_Loc_2) {
                 Int_Loc_3_Ref[0] = 5 * Int_Loc_1 - Int_Loc_2;
@@ -334,7 +334,7 @@ public class dhry {
                 return;
             }
             */
-            dh.Number_Of_Runs = 10000000;
+            dh.Number_Of_Runs = 1000000;
     
             dh.execute();
     }

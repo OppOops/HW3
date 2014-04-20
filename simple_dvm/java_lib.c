@@ -131,6 +131,10 @@ static int java_lang_obj_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *ty
 
 }
 
+static int compareTo(){
+
+}
+
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
     {"Ljava/io/PrintStream;",     "println",  java_io_print_stream_println},
@@ -164,6 +168,6 @@ int invoke_java_lang_library(DexFileFormat *dex, simple_dalvik_vm *vm,
         method->method_runtime(dex, vm, type);
         return 1;
     }
-    printf("static method %s in class %s type:%s not found\n", method_name, cls_name, type);
+    //printf("static method %s in class %s type:%s not found\n", method_name, cls_name, type);
     return 0;
 }

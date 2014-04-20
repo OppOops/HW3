@@ -251,6 +251,7 @@ typedef struct _simple_dalvik_vm {
     field_value* static_field_value;
     java_object* object[8192];
     java_array* array[512];
+    encoded_method *virtual_table[32];
 } simple_dalvik_vm;
 
 int create_instance(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id);
@@ -272,6 +273,7 @@ void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id);
 void move_int_to_bottom_result(simple_dalvik_vm *vm, int result);
 
+void invoke_virtual_method(DexFileFormat *dex, simple_dalvik_vm *vm, int class_idx, int method_idx);
 void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, int isDirect);
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry);
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);

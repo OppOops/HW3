@@ -16,7 +16,7 @@ static int find_const_string(DexFileFormat *dex, char *entry)
     return -1;
 }
 
-static void printRegs(simple_dalvik_vm *vm)
+void printRegs(simple_dalvik_vm *vm)
 {
     int i = 0;
     if (is_verbose()) {
@@ -38,6 +38,7 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     opCodeFunc func = 0;
 
     vm->pc = 0;
+            //printRegs(vm);
     while (1) {
         if (vm->pc >= m->code_item.insns_size * sizeof(ushort))
             break;
@@ -51,7 +52,8 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
             exit(0);
         }
     }
-    printf("end Method\n");
+            //printRegs(vm);
+//    printf("end Method\n");
 }
 
 void copy_parameter( simple_dalvik_vm *vm, int reg_size, int reg_count, int *reg_idx){
@@ -82,8 +84,13 @@ void invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method* m_A
     if (is_verbose() > 2)
         printf("encoded_method method_id = %d, insns_size = %d, reg_size = %d\n",
                m->method_idx_diff, m->code_item.insns_size, m->code_item.registers_size);
+    simple_dvm_register tmp[32];
+    for(i=0;i<32;i++)
+        tmp[i] = vm->regs[i];
     copy_parameter(vm, m->code_item.registers_size, vm->p.reg_count, vm->p.reg_idx);
     runMethod(dex, vm, m);
+    for(i=0;i<32;i++)
+        vm->regs[i] = tmp[i];
 }
 
 void invoke_direct_by_id(DexFileFormat *dex, simple_dalvik_vm *vm, int method_idx, int class_idx){
@@ -137,12 +144,63 @@ void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, 
         invoke_virtual_by_id(dex, vm, method_idx, class_def_idx);
 }
 
+void invoke_virtual_method(DexFileFormat *dex, simple_dalvik_vm *vm, int class_idx, int method_idx){
+    encoded_method *m = vm->virtual_table[method_idx];
+        //printf("m = %x\n",m);
+    if(m==NULL) return;
+    if (is_verbose() > 2)
+        printf("encoded_method method_id = %d, insns_size = %d, reg_size = %d\n",
+               m->method_idx_diff, m->code_item.insns_size, m->code_item.registers_size);
+    int i = 0;
+    simple_dvm_register tmp[32];
+    for(i=0;i<32;i++)
+        tmp[i] = vm->regs[i];
+    copy_parameter(vm, m->code_item.registers_size, vm->p.reg_count, vm->p.reg_idx);
+    runMethod(dex, vm, m);
+    for(i=0;i<32;i++)
+        vm->regs[i] = tmp[i];
+
+}
+
+void virtural_table_lookup(DexFileFormat *dex, simple_dalvik_vm *vm){
+    int i,k;
+    for(i=0;i<32;i++)
+        vm->virtual_table[i] = NULL;
+
+    for(i = 0 ; i < dex->header.methodIdsSize; i++){
+        int found = 0;
+        int class_idx =  dex->method_id_item[i].class_idx;
+        for(k=0;k<dex->header.classDefsSize;k++){
+            if(class_idx == dex->class_def_item[k].class_idx){
+                //printf("i = %d, class_idx = %d, k = %d\n",i,class_idx,k);
+                class_idx = k;
+                found = 1;
+                break;
+            }
+        }
+        if(!found) continue;
+        encoded_method* m_Arr = dex->class_data_item[class_idx].virtual_methods;
+        int size = dex->class_data_item[class_idx].virtual_methods_size;
+        int method_acc_idx = 0, method_idx = i;
+        for(k=0;k<size;k++){
+            method_acc_idx += m_Arr[k].method_idx_diff;
+            if(method_acc_idx == method_idx){
+                method_idx = k;
+                break;
+            }
+        }
+        encoded_method *m = m_Arr + method_idx;
+        vm->virtual_table[i] = m;
+    }
+}
+
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
 {
     char clinit[] = "<clinit>";
     memset(vm , 0, sizeof(simple_dalvik_vm));
     vm->static_field_value = (field_value*) malloc(sizeof(field_value) * (dex->header.fieldIdsSize) );
     invoke_method_entry(dex,vm,clinit,1);
+    virtural_table_lookup(dex, vm);
     invoke_method_entry(dex,vm,entry,1);
 }
 
