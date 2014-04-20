@@ -35,7 +35,7 @@ void printRegs(simple_dalvik_vm *vm)
     }
 #endif
 }
-
+extern opCodeFunc look_up_table[256];
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
 {
     u1 *ptr = (u1 *) m->code_item.insns;
@@ -43,22 +43,23 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     opCodeFunc func = 0;
 
     vm->pc = 0;
-            //printRegs(vm);
-    while (1) {
-        if (vm->pc >= m->code_item.insns_size * sizeof(ushort))
-            break;
+    int *check = &(vm->pc);
+    int size = m->code_item.insns_size * sizeof(ushort);
+    while (*check < size) {
+#ifndef threaded_code
         opCode = ptr[vm->pc];
-        func = findOpCodeFunc(opCode);
-        if (func != 0) {
+        func = look_up_table[opCode];
+        //if (func != 0) {
             func(dex, vm, ptr, &vm->pc);
-        } else {
+#else
+        dispatch_DTC(dex, vm, ptr, &vm->pc);
+#endif
+        /*} else {
             printRegs(vm);
             printf("Unknow OpCode =%02x \n", opCode);
             exit(0);
-        }
+        }*/
     }
-            //printRegs(vm);
-//    printf("end Method\n");
 }
 
 void copy_parameter( simple_dalvik_vm *vm, int reg_size, int reg_count, int *reg_idx){
@@ -170,11 +171,11 @@ void invoke_virtual_method(DexFileFormat *dex, simple_dalvik_vm *vm, int class_i
 #endif
     int i = 0;
     simple_dvm_register tmp[32];
-    for(i=0;i<32;i++)
+    for(i=0;i<16;i++)
         tmp[i] = vm->regs[i];
     copy_parameter(vm, m->code_item.registers_size, vm->p.reg_count, vm->p.reg_idx);
     runMethod(dex, vm, m);
-    for(i=0;i<32;i++)
+    for(i=0;i<16;i++)
         vm->regs[i] = tmp[i];
 
 }

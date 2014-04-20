@@ -7,11 +7,14 @@
 #ifndef SIMPLE_DVM_H
 #define SIMPLE_DVM_H
 //#define debug
+#define threaded_code
+
 #include <sys/time.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gperftools/profiler.h>
 
 typedef short u2;
 typedef unsigned int u4;
@@ -259,13 +262,28 @@ int create_array(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size
 int create_array_filled(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, int size, int content);
 
 /* convert to int ok */
-void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
+//void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
+#define load_reg_to(vm, id, ptr)       \
+{                                      \
+    int *r = (int*)vm->regs[id].data;  \
+    int *p = (int*)ptr;                \
+    *p = *r;                           \
+}                                      \
+
 void load_reg_to_double(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_result_to_double(simple_dalvik_vm *vm, unsigned char *ptr);
 void load_reg_to_long(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_double_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
 void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
-void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
+//void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
+#define store_to_reg(vm, id, ptr)         \
+{                                         \
+    int *r = (int*)vm->regs[id].data;     \
+    int *p = (int*)ptr;                   \
+    *r = *p;                              \
+}                                         \
+
+
 void store_long_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_long_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
@@ -292,6 +310,10 @@ int is_verbose();
 int enable_verbose();
 int disable_verbose();
 int set_verbose(int l);
+#endif
+
+#ifdef threaded_code
+    void dispatch_DTC(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc);
 #endif
 
 #endif

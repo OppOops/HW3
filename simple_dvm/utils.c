@@ -10,7 +10,7 @@
 #include "simple_dvm.h"
 
 #ifdef debug
-static int verbose_flag = 0;
+static int verbose_flag = 4;
 
 int is_verbose()
 {
@@ -34,126 +34,89 @@ int set_verbose(int l)
     return 0;
 }
 #endif
-
-void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr)
-{
-    simple_dvm_register *r = &vm->regs[id];
-    ptr[0] = r->data[0];
-    ptr[1] = r->data[1];
-    ptr[2] = r->data[2];
-    ptr[3] = r->data[3];
-}
-
+/*
+#define load_reg_to(vm, id, ptr)       \
+{                                      \
+    int *r = (int*)vm->regs[id].data;  \
+    int *p = (int*)ptr;                \
+    *p = *r;                           \
+}                                      \
+*/
 void load_reg_to_double(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    ptr[0] = r->data[2];
-    ptr[1] = r->data[3];
-    ptr[2] = r->data[0];
-    ptr[3] = r->data[1];
+    int *r = (int*)vm->regs[id].data;
+    int *p = (int*)ptr;
+    *p = *r;
 }
 void load_result_to_double(simple_dalvik_vm *vm, unsigned char *ptr)
 {
-    ptr[0] = vm->result[2];
-    ptr[1] = vm->result[3];
-    ptr[2] = vm->result[0];
-    ptr[3] = vm->result[1];
-    ptr[4] = vm->result[6];
-    ptr[5] = vm->result[7];
-    ptr[6] = vm->result[4];
-    ptr[7] = vm->result[5];
+    double *r = (double*)vm->result;
+    double *p = (double*)ptr;
+    *p = *r;
 }
 
 void load_reg_to_long(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    ptr[0] = r->data[2];
-    ptr[1] = r->data[3];
-    ptr[2] = r->data[0];
-    ptr[3] = r->data[1];
+    int *r = (int*)vm->regs[id].data;
+    int *p = (int*)ptr;
+    *p = *r;
 }
 
 void store_double_to_result(simple_dalvik_vm *vm, unsigned char *ptr)
 {
-    vm->result[0] = ptr[2];
-    vm->result[1] = ptr[3];
-    vm->result[2] = ptr[0];
-    vm->result[3] = ptr[1];
-    vm->result[4] = ptr[6];
-    vm->result[5] = ptr[7];
-    vm->result[6] = ptr[4];
-    vm->result[7] = ptr[5];
+    double *r = (double*)vm->result;
+    double *p = (double*)ptr;
+    *r = *p;
 }
 
 void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    r->data[0] = ptr[2];
-    r->data[1] = ptr[3];
-    r->data[2] = ptr[0];
-    r->data[3] = ptr[1];
+    int *r = (int*)vm->regs[id].data;
+    int *p = (int*)ptr;
+    *r = *p;
 }
-
-void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr)
-{
-    simple_dvm_register *r = &vm->regs[id];
-    r->data[0] = ptr[0];
-    r->data[1] = ptr[1];
-    r->data[2] = ptr[2];
-    r->data[3] = ptr[3];
-}
-
+/*
+#define store_to_reg(vm, id, ptr)         \
+{                                         \
+    int *r = (int*)vm->regs[id].data;     \
+    int *p = (int*)ptr;                   \
+    *r = *p;                              \
+}                                         \
+*/
 void store_long_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    r->data[0] = ptr[2];
-    r->data[1] = ptr[3];
-    r->data[2] = ptr[0];
-    r->data[3] = ptr[1];
+    int *r = (int*)vm->regs[id].data;
+    int *p = (int*)ptr;
+    *r = *p;
 }
 
 void store_long_to_result(simple_dalvik_vm *vm, unsigned char *ptr)
 {
-    vm->result[0] = ptr[2];
-    vm->result[1] = ptr[3];
-    vm->result[2] = ptr[0];
-    vm->result[3] = ptr[1];
-    vm->result[4] = ptr[6];
-    vm->result[5] = ptr[7];
-    vm->result[6] = ptr[4];
-    vm->result[7] = ptr[5];
+    double *r = (double*)vm->result;
+    double *p = (double*)ptr;
+    *r = *p;
 }
 
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    r->data[0] = vm->result[0];
-    r->data[1] = vm->result[1];
-    r->data[2] = vm->result[2];
-    r->data[3] = vm->result[3];
+    int *r = (int*)vm->result;
+    int *p = (int*)vm->regs[id].data;
+    *p = *r;
 }
 
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id)
 {
-    simple_dvm_register *r = &vm->regs[id];
-    r->data[0] = vm->result[4];
-    r->data[1] = vm->result[5];
-    r->data[2] = vm->result[6];
-    r->data[3] = vm->result[7];
+    int *r = ((int*)vm->result) + 1;
+    int *p = (int*)vm->regs[id].data;
+    *p = *r;
 }
 
 void move_reg_to_bottom_result(simple_dalvik_vm *vm, int id){
-    simple_dvm_register *r = &vm->regs[id];
-    vm->result[4] = r->data[0];
-    vm->result[5] = r->data[1];
-    vm->result[6] = r->data[2];
-    vm->result[7] = r->data[3];
-
+    int *r = ((int*)vm->result) + 1;
+    int *p = (int*)vm->regs[id].data;
+    *r = *p;
 }
 void move_int_to_bottom_result(simple_dalvik_vm *vm, int result){
-    unsigned char *data = (unsigned char*) &result;
-    vm->result[4] = data[0];
-    vm->result[5] = data[1];
-    vm->result[6] = data[2];
-    vm->result[7] = data[3];
+    int *r = ((int*)vm->result) + 1;
+    *r = result;
 }

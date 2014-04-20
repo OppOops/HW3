@@ -5,14 +5,14 @@
  */
 
 #include "simple_dvm.h"
-
+#ifndef debug
 static int verbose_flag = 0;
 
 static int is_verbose()
 {
     return verbose_flag;
 }
-
+#endif
 
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {

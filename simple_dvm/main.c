@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[])
 {
+ProfilerStart("/tmp/prof.out");
     DexFileFormat dex;
     simple_dalvik_vm vm;
     int x = 0;
@@ -31,5 +32,6 @@ int main(int argc, char *argv[])
 #endif
     simple_dvm_startup(&dex, &vm, "main");
 
+ProfilerStop();
     return 0;
 }

@@ -9,7 +9,7 @@ EXECUTABLE = $(PROJECT)$(SUFFIX)
 
 # Basic configurations
 CFLAGS += -g -std=c99
-LDFLAGS =
+LDFLAGS = -lprofiler
 
 # Optimizations
 CFLAGS += -Os
@@ -19,6 +19,7 @@ CFLAGS += -I.
 OBJS = \
     dvm.o \
     bytecodes.o \
+    bytecode_thread.o \
     java_lib.o \
     map_list_parser.o \
     type_ids_parser.o \
