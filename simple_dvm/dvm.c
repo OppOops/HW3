@@ -1,6 +1,7 @@
 #include "simple_dvm.h"
 #include "java_lib.h"
 
+void initOpCode();
 opCodeFunc findOpCodeFunc(unsigned char op);
 
 static int find_const_string(DexFileFormat *dex, char *entry)
@@ -8,8 +9,10 @@ static int find_const_string(DexFileFormat *dex, char *entry)
     int i = 0;
     for (i = 0; i < dex->header.stringIdsSize; i++) {
         if (memcmp(dex->string_data_item[i].data, entry, strlen(entry)) == 0) {
+#ifdef debug
             if (is_verbose())
                 printf("find %s in dex->string_data_item[%d] %s\n", entry, i, (char*)dex->string_data_item[i].data);
+#endif
             return i;
         }
     }
@@ -19,6 +22,7 @@ static int find_const_string(DexFileFormat *dex, char *entry)
 void printRegs(simple_dalvik_vm *vm)
 {
     int i = 0;
+#ifdef debug
     if (is_verbose()) {
         printf("pc = %08x\n", vm->pc);
         for (i = 0; i < 16 ; i++) {
@@ -29,6 +33,7 @@ void printRegs(simple_dalvik_vm *vm)
             if ((i + 1) % 4 == 0) printf("\n");
         }
     }
+#endif
 }
 
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
@@ -60,8 +65,10 @@ void copy_parameter( simple_dalvik_vm *vm, int reg_size, int reg_count, int *reg
      int i = 0;
      int m = reg_size - 1;
      simple_dvm_register tmp[5];
+#ifdef debug
      if (is_verbose() > 2)
         printf("copy parameter, function reg_size = %d, reg_count = %d\n",reg_size,reg_count);
+#endif
      for(;i<reg_count;i++)
          tmp[i] = vm->regs[reg_idx[i]];
      for(;reg_count>=0;m--)
@@ -74,16 +81,20 @@ void invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method* m_A
     for(i=0;i<size;i++){
         method_acc_idx += m_Arr[i].method_idx_diff;
         if(method_acc_idx == method_idx){
+#ifdef debug
             if (is_verbose() > 2)
             printf("find method %d in class item %d, direct_method %d\n",method_idx,class_idx,i);
+#endif
             method_idx = i;
             break;
         }
     }
     encoded_method *m = m_Arr + method_idx;
+#ifdef debug
     if (is_verbose() > 2)
         printf("encoded_method method_id = %d, insns_size = %d, reg_size = %d\n",
                m->method_idx_diff, m->code_item.insns_size, m->code_item.registers_size);
+#endif
     simple_dvm_register tmp[32];
     for(i=0;i<32;i++)
         tmp[i] = vm->regs[i];
@@ -117,9 +128,11 @@ void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, 
 
     for (i = 0 ; i < dex->header.methodIdsSize; i++)
         if (dex->method_id_item[i].name_idx == method_name_idx) {
+#ifdef debug
             if (is_verbose() > 2)
                 printf("find %s in class_idx[%d], method_id = %d\n",
                        entry, dex->method_id_item[i].class_idx, i);
+#endif
             class_idx = dex->method_id_item[i].class_idx;
             method_idx = i;
             break;
@@ -133,8 +146,10 @@ void invoke_method_entry(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry, 
     for(i=0;i<dex->header.classDefsSize;i++){
         if(class_idx == dex->class_def_item[i].class_idx){
             class_def_idx = i;
+#ifdef debug
             if (is_verbose() > 2)
                 printf("find class_idx in class item %d\n",i);
+#endif
             break;
         }
     }
@@ -148,9 +163,11 @@ void invoke_virtual_method(DexFileFormat *dex, simple_dalvik_vm *vm, int class_i
     encoded_method *m = vm->virtual_table[method_idx];
         //printf("m = %x\n",m);
     if(m==NULL) return;
+#ifdef debug
     if (is_verbose() > 2)
         printf("encoded_method method_id = %d, insns_size = %d, reg_size = %d\n",
                m->method_idx_diff, m->code_item.insns_size, m->code_item.registers_size);
+#endif
     int i = 0;
     simple_dvm_register tmp[32];
     for(i=0;i<32;i++)
@@ -196,9 +213,11 @@ void virtural_table_lookup(DexFileFormat *dex, simple_dalvik_vm *vm){
 
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
 {
+
     char clinit[] = "<clinit>";
     memset(vm , 0, sizeof(simple_dalvik_vm));
     vm->static_field_value = (field_value*) malloc(sizeof(field_value) * (dex->header.fieldIdsSize) );
+    initOpCode();
     invoke_method_entry(dex,vm,clinit,1);
     virtural_table_lookup(dex, vm);
     invoke_method_entry(dex,vm,entry,1);

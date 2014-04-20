@@ -334,7 +334,7 @@ public class dhry {
                 return;
             }
             */
-            dh.Number_Of_Runs = 1000000;
+            dh.Number_Of_Runs = 8000000;
     
             dh.execute();
     }

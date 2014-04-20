@@ -96,8 +96,10 @@ int create_array_filled(DexFileFormat *dex, simple_dalvik_vm *vm, int type_id, i
 void parse_type_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;
+#ifdef debug
     if (is_verbose() > 3)
         printf("parse type ids offset = %04lx\n", offset + sizeof(DexHeader));
+#endif
     dex->type_id_item = malloc(
                             sizeof(type_id_item) * dex->header.typeIdsSize);
 
@@ -106,10 +108,12 @@ void parse_type_ids(DexFileFormat *dex, unsigned char *buf, int offset)
                buf + i * sizeof(type_id_item) + offset,
                sizeof(type_id_item));
 
+#ifdef debug
         if (is_verbose() > 3)
             printf(" type_ids [%d], = %s\n", i,
                    dex->string_data_item[
                        dex->type_id_item[i].descriptor_idx].data);
+#endif
     }
 }
 
@@ -142,8 +146,10 @@ void parse_proto_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     volatile int i = 0, j = 0;
     int idx = 0;
+#ifdef debug
     if (is_verbose() > 3)
         printf("parse proto ids offset = %04lx\n", offset + sizeof(DexHeader));
+#endif
     dex->proto_id_item = malloc(
                              sizeof(proto_id_item) * dex->header.protoIdsSize);
 
@@ -155,23 +161,29 @@ void parse_proto_ids(DexFileFormat *dex, unsigned char *buf, int offset)
                sizeof(proto_id_item));
         memset(&dex->proto_type_list[i], 0, sizeof(type_list));
         idx = dex->proto_id_item[i].return_type_idx;
+#ifdef debug
         if (is_verbose() > 3)
             printf(" proto_id_item [%d], %s, type_id = %d %s, parameters_off = %08x\n", i,
                    dex->string_data_item[dex->proto_id_item[i].shorty_idx].data,
                    idx, get_type_item_name(dex, idx),
                    dex->proto_id_item[i].parameters_off);
+#endif
         if (dex->proto_id_item[i].parameters_off == 0)
             continue;
+#ifdef debug
         if (is_verbose() > 3)
             printf(" proto_typ_list[%d] offset %p ", i,
                    buf + dex->proto_id_item[i].parameters_off - sizeof(DexHeader));
+#endif
         memcpy(&dex->proto_type_list[i].size,
                buf + dex->proto_id_item[i].parameters_off - sizeof(DexHeader),
                sizeof(int));
 
+#ifdef debug
         if (is_verbose() > 3)
             printf("proto_type_list[%d].size = %d\n", i,
                    dex->proto_type_list[i].size);
+#endif
         if (dex->proto_type_list[i].size > 0) {
             dex->proto_type_list[i].type_item = (type_item *)
                                                 malloc(sizeof(type_item) * dex->proto_type_list[i].size);
@@ -187,10 +199,12 @@ void parse_proto_ids(DexFileFormat *dex, unsigned char *buf, int offset)
                        + (sizeof(type_item) * j),
                        sizeof(type_item));
 
+#ifdef debug
                 if (is_verbose() > 3)
                     printf("item[%d], type_idx = %d, type = %s\n",
                            j, item->type_idx,
                            get_type_item_name(dex, item->type_idx));
+#endif
             }
         }
     }
@@ -213,16 +227,21 @@ type_list *get_proto_type_list(DexFileFormat *dex, int proto_id)
 void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i;
+#ifdef debug
     if (is_verbose() > 3)
         printf("parse feild ids offset = %04lx\n", offset + sizeof(DexHeader));
+#endif
     dex->field_id_item = malloc(sizeof(field_id_item) * dex->header.fieldIdsSize);
 
+#ifdef debug
     if (is_verbose() > 3)
         printf("dex->header.fieldIdsSize = %d\n", dex->header.fieldIdsSize);
+#endif
     for (i = 0; i < dex->header.fieldIdsSize; i++) {
         memcpy(&dex->field_id_item[i],
                buf + i * sizeof(field_id_item) + offset,
                sizeof(field_id_item));
+#ifdef debug
         if (is_verbose() > 3) {
             printf(" field_id_item [%d], class_id = %d %s, type_id = %d %s, name_idx=%d %s\n",
                    i, dex->field_id_item[i].class_idx,
@@ -237,6 +256,7 @@ void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset)
                    dex->field_id_item[i].name_idx,
                    dex->string_data_item[dex->field_id_item[i].name_idx].data);
         }
+#endif
     }
 }
 

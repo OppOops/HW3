@@ -55,20 +55,26 @@ static void parse_type_list(DexFileFormat *dex,
                             unsigned char *buf, int offset)
 {
     int i = 0;
+#ifdef debug
     if (is_verbose() > 3)
         printf("parse type_list offset = %04lx\n", offset + sizeof(DexHeader));
+#endif
     memcpy(&dex->type_list.size , buf + offset, 4);
+#ifdef debug
     if (is_verbose() > 3)
         printf("type_list size = %d\n", dex->type_list.size);
+#endif
     if (dex->type_list.size > 0) {
         dex->type_list.type_item = malloc(sizeof(type_item) * dex->type_list.size);
         for (i = 0 ; i < dex->type_list.size; i++) {
             memcpy(&dex->type_list.type_item[i],
                    buf + offset + 4 + (sizeof(type_item) * i),
                    sizeof(type_item));
+#ifdef debug
             if (is_verbose() > 3)
                 printf("type_list[%d], type_idx = %d\n", i,
                        dex->type_list.type_item[i].type_idx);
+#endif
         }
     }
 }
@@ -80,6 +86,7 @@ static void parse_map_item(DexFileFormat *dex,
     int size_in_bytes = 0;
     memcpy(&dex->map_list.map_item[index], buf + offset, sizeof(map_item));
     size_in_bytes = 4 + (dex->map_list.map_item[index].size * 2);
+#ifdef debug
     if (is_verbose() > 3) {
         printf("offset = %04lx ", offset + sizeof(DexHeader));
         printf("map_item[%d] : type = %04x(%s), size = %04x, "
@@ -91,6 +98,7 @@ static void parse_map_item(DexFileFormat *dex,
                dex->map_list.map_item[index].offset,
                size_in_bytes);
     }
+#endif
     if (dex->map_list.map_item[index].type == 0x1001)  /* TYPE_TYPE_LIST */
         parse_type_list(dex, buf,
                         dex->map_list.map_item[index].offset - sizeof(DexHeader));
@@ -100,11 +108,15 @@ static void parse_map_item(DexFileFormat *dex,
 void parse_map_list(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;
+#ifdef debug
     if (is_verbose() > 3)
         printf("parse map_list offset = %04lx\n", offset + sizeof(DexHeader));
+#endif
     memcpy(&dex->map_list.size , buf + offset, 4);
+#ifdef debug
     if (is_verbose() > 3)
         printf("map_list size = %d\n", dex->map_list.size);
+#endif
     if (dex->map_list.size > 0) {
         dex->map_list.map_item = malloc(sizeof(map_item) * dex->map_list.size);
         for (i = 0 ; i < dex->map_list.size; i++)

@@ -20,11 +20,15 @@ int main(int argc, char *argv[])
         printf("%s [dex_file] \n", argv[0]);
         return 0;
     }
+#ifdef debug
     if (argc >= 3)
         set_verbose(atoi(argv[2]));
+#endif
     parseDexFile(argv[1], &dex);
     printDexFile(&dex);
+#ifdef debug
     if (is_verbose() > 3) printDexFile(&dex);
+#endif
     simple_dvm_startup(&dex, &vm, "main");
 
     return 0;

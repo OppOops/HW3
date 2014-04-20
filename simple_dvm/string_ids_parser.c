@@ -6,6 +6,14 @@
 
 #include "simple_dvm.h"
 
+static int verbose_flag = 0;
+
+static int is_verbose()
+{
+    return verbose_flag;
+}
+
+
 static void parse_string_data_item(DexFileFormat *dex,
                                    unsigned char *buf, int offset, int index)
 {

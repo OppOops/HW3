@@ -6,6 +6,14 @@
 
 #include "simple_dvm.h"
 
+static int verbose_flag = 0;
+
+static int is_verbose()
+{
+    return verbose_flag;
+}
+
+
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset)
 {
     int i = 0;

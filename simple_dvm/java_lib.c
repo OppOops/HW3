@@ -17,7 +17,7 @@ int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
     for (i = 0; i < times; i++)
         r = ((double) rand() / (double) RAND_MAX);
 
-    if (is_verbose() > 3) printf("get random number = %f \n", r);
+//    if (is_verbose() > 3) printf("get random number = %f \n", r);
     store_double_to_result(vm, (unsigned char *) &r);
     load_result_to_double(vm, (unsigned char *) &test);
 
@@ -33,8 +33,8 @@ int java_io_print_stream_println(DexFileFormat *dex, simple_dalvik_vm *vm, char 
     invoke_parameters *p = &vm->p;
     int i = 0;
     int string_id = 0;
-    if (is_verbose())
-        printf("call java.io.PrintStream.println\n");
+/*    if (is_verbose())
+        printf("call java.io.PrintStream.println\n");*/
 
     load_reg_to(vm, p->reg_idx[1], (unsigned char *) &string_id);
     if (use_buf == 1) {
@@ -52,8 +52,8 @@ int java_io_print_stream_println(DexFileFormat *dex, simple_dalvik_vm *vm, char 
 int java_lang_string_builder_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
-    if (is_verbose())
-        printf("call java.lang.StringBuilder.<init>\n");
+/*    if (is_verbose())
+        printf("call java.lang.StringBuilder.<init>\n");*/
     memset(buf, 0, 1024);
     buf_ptr = 0;
     return 0;
@@ -63,8 +63,8 @@ int java_lang_string_builder_append(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 {
     invoke_parameters *p = &vm->p;
     int string_id = 0;
-    if (is_verbose())
-        printf("call java.lang.StringBuilder.append\n");
+/*    if (is_verbose())
+        printf("call java.lang.StringBuilder.append\n");*/
     load_reg_to(vm, p->reg_idx[1], (unsigned char *) &string_id);
     if (type != 0) {
         if (strcmp(type, "Ljava/lang/String;") == 0) {
@@ -79,8 +79,8 @@ int java_lang_string_builder_append(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 int java_lang_string_builder_to_string(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
-    if (is_verbose())
-        printf("call java.lang.StringBuilder.toString\n");
+/*    if (is_verbose())
+        printf("call java.lang.StringBuilder.toString\n");*/
     use_buf = 1;
     return 0;
 }
@@ -88,8 +88,8 @@ int java_lang_string_builder_to_string(DexFileFormat *dex, simple_dalvik_vm *vm,
 int java_lang_system_currenttimemillis(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
-    if (is_verbose())
-        printf("call java.lang.System.currentTimeMillis\n");
+/*    if (is_verbose())
+        printf("call java.lang.System.currentTimeMillis\n");*/
     struct timeval t;
     gettimeofday(&t, NULL);
     unsigned long mtime = (t.tv_sec%1000000L)*1000 + t.tv_usec / 1000;
@@ -163,8 +163,8 @@ int invoke_java_lang_library(DexFileFormat *dex, simple_dalvik_vm *vm,
 {
     java_lang_method *method = find_java_lang_method(cls_name, method_name);
     if (method != 0) {
-        if (is_verbose())
-            printf("invoke %s/%s %s\n", method->clzname, method->methodname, type);
+/*        if (is_verbose())
+            printf("invoke %s/%s %s\n", method->clzname, method->methodname, type);*/
         method->method_runtime(dex, vm, type);
         return 1;
     }

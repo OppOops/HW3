@@ -6,7 +6,7 @@
 
 #ifndef SIMPLE_DVM_H
 #define SIMPLE_DVM_H
-
+//#define debug
 #include <sys/time.h>
 #include <time.h>
 #include <stdio.h>
@@ -287,9 +287,11 @@ typedef struct _byteCode {
     opCodeFunc func;
 } byteCode;
 
+#ifdef debug
 int is_verbose();
 int enable_verbose();
 int disable_verbose();
 int set_verbose(int l);
+#endif
 
 #endif

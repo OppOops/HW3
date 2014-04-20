@@ -9,13 +9,13 @@
 #include <string.h>
 #include "simple_dvm.h"
 
+#ifdef debug
 static int verbose_flag = 0;
 
 int is_verbose()
 {
     return verbose_flag;
 }
-
 int enable_verbose()
 {
     verbose_flag = 1;
@@ -33,6 +33,7 @@ int set_verbose(int l)
     verbose_flag = l;
     return 0;
 }
+#endif
 
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
